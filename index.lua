@@ -451,7 +451,7 @@ TheFamily.UI = {
 											n = G.UIT.T,
 											config = {
 												text = front_label.text or "",
-												scale = 0.5 * TheFamily.UI.scale,
+												scale = (front_label.scale or 0.5) * TheFamily.UI.scale,
 												colour = front_label.colour or G.C.WHITE,
 											},
 										},
@@ -511,7 +511,7 @@ TheFamily.UI = {
 					area.T.y,
 					G.CARD_W,
 					G.CARD_H,
-					nil,
+					definition.front and G.P_CARDS[definition.front] or nil,
 					G.P_CENTERS[definition.center] or G.P_CENTERS.c_base,
 					{
 						bypass_discovery_center = true,
@@ -741,6 +741,8 @@ TheFamily.UI = {
 	end,
 }
 
+--- @param config TheFamilyGroupOptions
+--- @return TheFamilyGroup
 function TheFamily.create_tab_group(config)
 	if TheFamily.tab_groups.dictionary[config.key] then
 		return
@@ -754,6 +756,9 @@ function TheFamily.create_tab_group(config)
 	TheFamily.tab_groups.dictionary[group.key] = group
 	return group
 end
+
+--- @param config TheFamilyTabOptions
+--- @return TheFamilyTab
 function TheFamily.create_tab(config)
 	if TheFamily.tabs.dictionary[config.key] then
 		return
@@ -763,12 +768,11 @@ function TheFamily.create_tab(config)
 		order = config.order or #TheFamily.tabs.list,
 
 		front = config.front or nil,
-		front_label = config.front_label or nil,
 		center = config.center or "c_base",
 
+		front_label = config.front_label or nil,
 		popup = config.popup or nil,
 		alert = config.alert or nil,
-		update = config.update or nil,
 
 		can_highlight = config.can_highlight or nil,
 		highlight = config.highlight or nil,
@@ -778,6 +782,8 @@ function TheFamily.create_tab(config)
 
 		group_key = config.group_key or nil,
 		group = nil,
+
+		update = config.update or nil,
 	}
 	if tab.group_key then
 		local group = TheFamily.tab_groups.dictionary[tab.group_key]
@@ -797,14 +803,14 @@ function TheFamily.init()
 	G.E_MANAGER:add_event(Event({
 		func = function()
 			table.sort(TheFamily.tabs.list, function(a, b)
-				return a.order < b.order
+				return not a.order or not b.order or a.order < b.order
 			end)
 			table.sort(TheFamily.tab_groups.list, function(a, b)
-				return a.order < b.order
+				return not a.order or not b.order or a.order < b.order
 			end)
 			for _, group in ipairs(TheFamily.tab_groups.list) do
 				table.sort(group.tabs, function(a, b)
-					return a.order < b.order
+					return not a.order or not b.order or a.order < b.order
 				end)
 			end
 			TheFamily.UI.create_card_area()
@@ -817,3 +823,29 @@ function TheFamily.init()
 		end,
 	}))
 end
+
+--- @class TheFamilyGroupOptions: table
+--- @field key string Unique key
+--- @field order? number Value user for sorting, from lowest to highest
+
+--- @class TheFamilyTabOptions: table
+--- @field key string Unique key
+--- @field group_key string Unique key of group to be assigned for
+--- @field order? number Value user for sorting, from lowest to highest
+--- @field front? string Key from G.P_CARDS to set card's front
+--- @field center? string | fun(definition: TheFamilyTab, card: Card): Card Key from G.P_CENTERS, or function which return fully created card (`create_card()` or `SMODS.create_card()`, for example). **DO NOT EMPLACE IT**
+--- @field front_label? fun(definition: TheFamilyTab, card: Card): { text?: string, colour?: table, scale?: number } Function which returns config for displaying text on a card
+--- @field popup? fun(definition: TheFamilyTab, card: Card): { name?: table, description?: table[] } Function which returns config for displaying popup on hover. Rerenders when tab is (de)selected, use `card.highlighted` to determine is tab selected at the moment
+--- @field keep_popup_when_highlighted? boolean When set to `true` and card is highlighted, popup will stay even if card will be not hovered
+--- @field alert? fun(definition: TheFamilyTab, card: Card): table | { definition: fun(definition: TheFamilyTab, card: Card): table } Function which returns config for vanilla `create_UIBox_card_alert()` function, or, if `definition` field present, function which returns UI definition for popup
+--- @field can_highlight? fun(definition: TheFamilyTab, card: Card): boolean Function which controls is card can be highlighted in current moment. When value will change to `false`, card will automatically unhighlight
+--- @field highlight? fun(definition: TheFamilyTab, card: Card) Callback when card is highlighted
+--- @field unhighlight? fun(definition: TheFamilyTab, card: Card) Callback when card is unhighlighted
+--- @field click? fun(definition: TheFamilyTab, card: Card): boolean Callback when card is clicked. If callback returns `true`, other events will not be fired (ex. card highlight)
+--- @field update? fun(definition: TheFamilyTab, card: Card, dt: number) Update function
+
+--- @class TheFamilyTab: TheFamilyTabOptions
+--- @field group TheFamilyGroup
+
+--- @class TheFamilyGroup: TheFamilyGroupOptions
+--- @field tabs TheFamilyTab[]
