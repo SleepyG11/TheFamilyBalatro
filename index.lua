@@ -233,7 +233,7 @@ TheFamily.UI = {
 		end
 	end,
 	set_card_h_popup = function(definition, card)
-		local popup_definitions = definition.popup(definition, card)
+		local popup_definitions = definition.popup(definition, card) or {}
 
 		local result_content = {
 			popup_definitions.name and name_from_rows(popup_definitions.name) or nil,
@@ -352,7 +352,7 @@ TheFamily.UI = {
 
 			if type(definition.alert) == "function" then
 				if not self.children.alert then
-					local args = definition.alert(definition, self)
+					local args = definition.alert(definition, self) or {}
 					local content, config
 					if type(args.definition) == "function" then
 						content, config = args.definition(definition, self)
@@ -433,7 +433,7 @@ TheFamily.UI = {
 
 			if type(definition.front_label) == "function" then
 				if not self.children.front_label then
-					local front_label = definition.front_label(definition, self)
+					local front_label = definition.front_label(definition, self) or {}
 					local box = UIBox({
 						definition = {
 							n = G.UIT.ROOT,
@@ -450,7 +450,7 @@ TheFamily.UI = {
 										{
 											n = G.UIT.T,
 											config = {
-												text = front_label.text,
+												text = front_label.text or "",
 												scale = 0.5 * TheFamily.UI.scale,
 												colour = front_label.colour or G.C.WHITE,
 											},
@@ -521,6 +521,11 @@ TheFamily.UI = {
 				)
 			elseif type(definition.center) == "function" then
 				card = definition.center(definition, area)
+					or Card(area.T.x + area.T.w / 2, area.T.y, G.CARD_W, G.CARD_H, nil, G.P_CENTERS.c_base, {
+						bypass_discovery_center = true,
+						bypass_discovery_ui = true,
+						discover = false,
+					})
 			end
 			card.no_shadow = true
 			card.states.collide.can = true
