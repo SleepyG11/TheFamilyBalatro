@@ -354,8 +354,8 @@ TheFamily.UI = {
 				if not self.children.alert then
 					local args = definition.alert(definition, self) or {}
 					local content, config
-					if type(args.definition) == "function" then
-						content, config = args.definition(definition, self)
+					if args.definition then
+						content, config = args.definition, args.definition_config
 					end
 					config = config
 						or {
@@ -629,78 +629,77 @@ TheFamily.UI = {
 				return true
 			end,
 			alert = function(definition, card)
+				local info = TheFamily.UI.get_ui_values()
 				return {
-					definition = function(definition, card)
-						local info = TheFamily.UI.get_ui_values()
-						return {
-							n = G.UIT.R,
-							config = {
-								align = "cm",
-								minh = 0.3 * info.scale,
-								maxh = 1 * info.scale,
-								minw = 0.5 * info.scale,
-								maxw = 1.5 * info.scale,
-								padding = 0.1 * info.scale,
-								r = 0.02 * info.scale,
-								colour = HEX("22222288"),
-								res = 0.5 * info.scale,
-							},
-							nodes = {
-								{
-									n = G.UIT.O,
-									config = {
-										object = DynaText({
-											string = {
-												{
-													ref_table = TheFamily.UI,
-													ref_value = "page",
-												},
+					definition = {
+						n = G.UIT.R,
+						config = {
+							align = "cm",
+							minh = 0.3 * info.scale,
+							maxh = 1 * info.scale,
+							minw = 0.5 * info.scale,
+							maxw = 1.5 * info.scale,
+							padding = 0.1 * info.scale,
+							r = 0.02 * info.scale,
+							colour = HEX("22222288"),
+							res = 0.5 * info.scale,
+						},
+						nodes = {
+							{
+								n = G.UIT.O,
+								config = {
+									object = DynaText({
+										string = {
+											{
+												ref_table = TheFamily.UI,
+												ref_value = "page",
 											},
-											colours = { G.C.WHITE },
-											shadow = true,
-											silent = true,
-											bump = true,
-											pop_in = 0.2,
-											scale = 0.4 * info.scale,
-										}),
-									},
-								},
-								{
-									n = G.UIT.T,
-									config = {
-										text = "/",
-										colour = G.C.WHITE,
+										},
+										colours = { G.C.WHITE },
+										shadow = true,
+										silent = true,
+										bump = true,
+										pop_in = 0.2,
 										scale = 0.4 * info.scale,
-									},
+									}),
 								},
-								{
-									n = G.UIT.O,
-									config = {
-										object = DynaText({
-											string = {
-												{
-													ref_table = TheFamily.UI,
-													ref_value = "max_page",
-												},
+							},
+							{
+								n = G.UIT.T,
+								config = {
+									text = "/",
+									colour = G.C.WHITE,
+									scale = 0.4 * info.scale,
+								},
+							},
+							{
+								n = G.UIT.O,
+								config = {
+									object = DynaText({
+										string = {
+											{
+												ref_table = TheFamily.UI,
+												ref_value = "max_page",
 											},
-											colours = { G.C.WHITE },
-											shadow = true,
-											silent = true,
-											bump = true,
-											pop_in = 0.2,
-											scale = 0.4 * info.scale,
-										}),
-									},
+										},
+										colours = { G.C.WHITE },
+										shadow = true,
+										silent = true,
+										bump = true,
+										pop_in = 0.2,
+										scale = 0.4 * info.scale,
+									}),
 								},
 							},
-						}, {
-							align = "tri",
-							offset = {
-								x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
-								y = 0.15 * info.scale,
-							},
-						}
-					end,
+						},
+					},
+					definition_config = {
+						align = "tri",
+						offset = {
+							x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
+							y = 0.15 * info.scale,
+						},
+					},
 				}
 			end,
 		})
@@ -833,11 +832,11 @@ end
 --- @field group_key string Unique key of group to be assigned for
 --- @field order? number Value user for sorting, from lowest to highest
 --- @field front? string Key from G.P_CARDS to set card's front
---- @field center? string | fun(definition: TheFamilyTab, card: Card): Card Key from G.P_CENTERS, or function which return fully created card (`create_card()` or `SMODS.create_card()`, for example). **DO NOT EMPLACE IT**
+--- @field center? string | fun(definition: TheFamilyTab, area: CardArea): Card Key from G.P_CENTERS, or function which return fully created card (`create_card()` or `SMODS.create_card()`, for example). **DO NOT EMPLACE IT!**
 --- @field front_label? fun(definition: TheFamilyTab, card: Card): { text?: string, colour?: table, scale?: number } Function which returns config for displaying text on a card
 --- @field popup? fun(definition: TheFamilyTab, card: Card): { name?: table, description?: table[] } Function which returns config for displaying popup on hover. Rerenders when tab is (de)selected, use `card.highlighted` to determine is tab selected
 --- @field keep_popup_when_highlighted? boolean When set to `true` and card is highlighted, popup will stay even if card will be not hovered
---- @field alert? fun(definition: TheFamilyTab, card: Card): table | { definition: fun(definition: TheFamilyTab, card: Card): table } Function which returns config for vanilla `create_UIBox_card_alert()` function, or, if `definition` field present, function which returns UI definition for popup
+--- @field alert? fun(definition: TheFamilyTab, card: Card): table | { definition: table, definition_config?: table } Function which returns config for vanilla `create_UIBox_card_alert()` function, or custom definition for it
 --- @field can_highlight? fun(definition: TheFamilyTab, card: Card): boolean Function which controls can card be highlighted. When value will change to `false`, card will automatically unhighlight
 --- @field highlight? fun(definition: TheFamilyTab, card: Card) Callback when card is highlighted
 --- @field unhighlight? fun(definition: TheFamilyTab, card: Card) Callback when card is unhighlighted
