@@ -1,6 +1,15 @@
-TheFamily = setmetatable({}, {})
+TheFamily = setmetatable({
+	version = "0.1.0",
+}, {})
 
-TF = TheFamily
+TheFamily.tabs = {
+	dictionary = {},
+	list = {},
+}
+TheFamily.tab_groups = {
+	dictionary = {},
+	list = {},
+}
 
 TheFamily.UI = {
 	r = -70,
@@ -19,6 +28,7 @@ TheFamily.UI = {
 	page = 1,
 	items_per_page = 20,
 	utility_cards_per_page = 5,
+	tabs_per_page = 15,
 
 	area = nil,
 	area_container = nil,
@@ -67,6 +77,14 @@ TheFamily.UI = {
 			if type(card.thefamily_definition.unhighlight) == "function" then
 				card.thefamily_definition.unhighlight(card.thefamily_definition, card)
 			end
+			if card.states.hover.is and type(card.thefamily_definition.popup) == "function" then
+				if card.children.h_popup then
+					card.config.h_popup = nil
+					card.children.h_popup:remove()
+					card.children.h_popup = nil
+				end
+				TheFamily.UI.set_card_h_popup(card.thefamily_definition, card)
+			end
 		end
 		function selector_area:add_to_highlighted(card, silent)
 			if not self.cards or not self.cards[1] then
@@ -98,6 +116,18 @@ TheFamily.UI = {
 			card.highlighted = true
 			if type(card.thefamily_definition.highlight) == "function" then
 				card.thefamily_definition.highlight(card.thefamily_definition, card)
+			end
+
+			if
+				(card.thefamily_definition.keep_popup_when_highlighted or card.states.hover.is)
+				and type(card.thefamily_definition.popup) == "function"
+			then
+				if card.children.h_popup then
+					card.config.h_popup = nil
+					card.children.h_popup:remove()
+					card.children.h_popup = nil
+				end
+				TheFamily.UI.set_card_h_popup(card.thefamily_definition, card)
 			end
 
 			if not silent then
@@ -202,6 +232,67 @@ TheFamily.UI = {
 			card:hard_set_T(card.T.x, card.T.y, card.T.w, card.T.h)
 		end
 	end,
+	set_card_h_popup = function(definition, card)
+		local popup_definitions = definition.popup(definition, card)
+
+		local result_content = {
+			popup_definitions.name and name_from_rows(popup_definitions.name) or nil,
+		}
+		for _, item in ipairs(popup_definitions.description or {}) do
+			table.insert(
+				result_content,
+				desc_from_rows({
+					item,
+				})
+			)
+		end
+
+		card.config.h_popup_config = card:align_h_popup()
+		card.config.h_popup = {
+			n = G.UIT.ROOT,
+			config = { align = "cm", colour = G.C.CLEAR },
+			nodes = {
+				{
+					n = G.UIT.C,
+					config = {
+						align = "cm",
+					},
+					nodes = {
+						{
+							n = G.UIT.R,
+							config = {
+								padding = 0.05,
+								r = 0.12,
+								colour = lighten(G.C.JOKER_GREY, 0.5),
+								emboss = 0.07,
+							},
+							nodes = {
+								{
+									n = G.UIT.R,
+									config = {
+										align = "cm",
+										padding = 0.07,
+										r = 0.1,
+										colour = adjust_alpha(darken(G.C.BLACK, 0.1), 0.8),
+									},
+									nodes = result_content,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		if not card.children.h_popup then
+			card.config.h_popup_config.instance_type = "POPUP"
+			card.children.h_popup = UIBox({
+				definition = card.config.h_popup,
+				config = card.config.h_popup_config,
+			})
+			card.children.h_popup.states.collide.can = false
+			card.children.h_popup.states.drag.can = true
+		end
+	end,
 	set_card_update = function(definition, card)
 		function card:align_h_popup()
 			return {
@@ -215,53 +306,17 @@ TheFamily.UI = {
 		end
 		function card:hover()
 			if type(definition.popup) == "function" then
-				local popup_definitions = definition.popup(definition, card)
-				if popup_definitions.name or popup_definitions.description then
-					self.config.h_popup_config = self:align_h_popup()
-					self.config.h_popup = {
-						n = G.UIT.ROOT,
-						config = { align = "cm", colour = G.C.CLEAR },
-						nodes = {
-							{
-								n = G.UIT.C,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.R,
-										config = {
-											padding = 0.05,
-											r = 0.12,
-											colour = lighten(G.C.JOKER_GREY, 0.5),
-											emboss = 0.07,
-										},
-										nodes = {
-											{
-												n = G.UIT.R,
-												config = {
-													align = "cm",
-													padding = 0.07,
-													r = 0.1,
-													colour = adjust_alpha(darken(G.C.BLACK, 0.1), 0.8),
-												},
-												nodes = {
-													popup_definitions.name and name_from_rows(popup_definitions.name)
-														or nil,
-													popup_definitions.description and desc_from_rows({
-														popup_definitions.description,
-													}) or nil,
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					}
-				end
+				TheFamily.UI.set_card_h_popup(definition, card)
 			end
-			Node.hover(self)
+		end
+		function card:stop_hover()
+			if definition.keep_popup_when_highlighted then
+				return
+			end
+			if self.children.h_popup then
+				self.children.h_popup:remove()
+				self.children.h_popup = nil
+			end
 		end
 
 		function card:update_alert() end
@@ -280,6 +335,19 @@ TheFamily.UI = {
 
 			if type(definition.update) == "function" then
 				definition.update(definition, self, dt)
+			end
+
+			if
+				self.highlighted
+				and definition.keep_popup_when_highlighted
+				and type(definition.popup) == "function"
+				and not self.children.h_popup
+			then
+				TheFamily.UI.set_card_h_popup(definition, card)
+			elseif not self.highlighted and not self.states.hover.is and self.children.h_popup then
+				self.config.h_popup = nil
+				self.children.h_popup:remove()
+				self.children.h_popup = nil
 			end
 
 			if type(definition.alert) == "function" then
@@ -415,7 +483,7 @@ TheFamily.UI = {
 			end
 		end
 	end,
-	create_card_area_card = function(definition)
+	create_card_area_card = function(definition, replace_index)
 		local card
 		if definition.separator or definition.filler then
 			local area = TheFamily.UI.area
@@ -476,12 +544,8 @@ TheFamily.UI = {
 			end
 			if definition.emplace and TheFamily.UI.area then
 				TheFamily.UI.area:emplace(card)
-			elseif
-				definition.replace_index
-				and TheFamily.UI.area
-				and (TheFamily.UI.area.cards or {})[definition.replace_index]
-			then
-				local target_index = definition.replace_index
+			elseif replace_index and TheFamily.UI.area and (TheFamily.UI.area.cards or {})[replace_index] then
+				local target_index = replace_index
 				local target_card = TheFamily.UI.area.cards[target_index]
 				if target_card.highlighted then
 					TheFamily.UI.area:remove_from_highlighted(target_card, true)
@@ -516,7 +580,7 @@ TheFamily.UI = {
 			separator = true,
 			emplace = true,
 		})
-		for i = 1, TheFamily.UI.items_per_page - TheFamily.UI.utility_cards_per_page do
+		for i = 1, TheFamily.UI.tabs_per_page do
 			TheFamily.UI.create_card_area_card({
 				filler = true,
 				emplace = true,
@@ -535,33 +599,12 @@ TheFamily.UI = {
 			center = "c_base",
 			emplace = true,
 			click = function(definition, card)
-				TheFamily.UI.page = math.max(1, TheFamily.UI.page + 1)
-				TheFamily.UI.create_page_cards()
+				local old_page = TheFamily.UI.page
+				TheFamily.UI.page = math.max(1, math.min(TheFamily.UI.max_page, TheFamily.UI.page + 1))
+				if TheFamily.UI.page ~= old_page then
+					TheFamily.UI.create_page_cards()
+				end
 				return true
-			end,
-			popup = function(definition, card)
-				return {
-					name = {
-						{
-							n = G.UIT.T,
-							config = {
-								text = "Previous page?",
-								scale = 0.4,
-								colour = G.C.WHITE,
-							},
-						},
-					},
-					description = {
-						{
-							n = G.UIT.T,
-							config = {
-								text = "Go to previous page",
-								colour = G.C.BLACK,
-								scale = 0.3,
-							},
-						},
-					},
-				}
 			end,
 		})
 		TheFamily.UI.create_card_area_card({
@@ -573,33 +616,12 @@ TheFamily.UI = {
 			center = "c_base",
 			emplace = true,
 			click = function(definition, card)
+				local old_page = TheFamily.UI.page
 				TheFamily.UI.page = math.max(1, TheFamily.UI.page - 1)
-				TheFamily.UI.create_page_cards()
+				if TheFamily.UI.page ~= old_page then
+					TheFamily.UI.create_page_cards()
+				end
 				return true
-			end,
-			popup = function(definition, card)
-				return {
-					name = {
-						{
-							n = G.UIT.T,
-							config = {
-								text = "Next page?",
-								scale = 0.4,
-								colour = G.C.WHITE,
-							},
-						},
-					},
-					description = {
-						{
-							n = G.UIT.T,
-							config = {
-								text = "Go to next page",
-								colour = G.C.BLACK,
-								scale = 0.3,
-							},
-						},
-					},
-				}
 			end,
 			alert = function(definition, card)
 				return {
@@ -652,7 +674,7 @@ TheFamily.UI = {
 										object = DynaText({
 											string = {
 												{
-													ref_table = { max_page = 3 },
+													ref_table = TheFamily.UI,
 													ref_value = "max_page",
 												},
 											},
@@ -679,249 +701,112 @@ TheFamily.UI = {
 		})
 	end,
 	create_page_cards = function()
-		-- local centers = { "j_joker", "c_base", "j_trading", "j_ring_master", "j_family", "j_ramen", "j_blueprint" }
-		-- for i = 1, TheFamily.UI.items_per_page - TheFamily.UI.utility_cards_per_page do
-		-- 	TheFamily.UI.create_card_area_card({
-		-- 		front_label = i == 7 and function(definition, card)
-		-- 			return {
-		-- 				text = "Handy",
-		-- 			}
-		-- 		end,
-		-- 		center = centers[((i - 1) % 3) + 1 + 3 * (TheFamily.UI.page > 1 and 1 or 0)],
-		-- 		replace_index = i + 2,
-		-- 		popup = function(definition, card)
-		-- 			return {
-		-- 				name = {
-		-- 					{
-		-- 						n = G.UIT.T,
-		-- 						config = {
-		-- 							text = "Test popup",
-		-- 							scale = 0.4,
-		-- 							colour = G.C.WHITE,
-		-- 						},
-		-- 					},
-		-- 				},
-		-- 				description = {
-		-- 					{
-		-- 						n = G.UIT.T,
-		-- 						config = {
-		-- 							text = "Clicking here will show an UI later!",
-		-- 							colour = G.C.BLACK,
-		-- 							scale = 0.3,
-		-- 						},
-		-- 					},
-		-- 				},
-		-- 			}
-		-- 		end,
-		-- 		alert = i == 4 and function()
-		-- 			return {
-		-- 				definition = function(definition, card)
-		-- 					local info = TheFamily.UI.get_ui_values()
-		-- 					return {
-		-- 						n = G.UIT.R,
-		-- 						config = {
-		-- 							align = "cm",
-		-- 							minh = 0.3 * info.scale,
-		-- 							maxh = 1 * info.scale,
-		-- 							minw = 0.5 * info.scale,
-		-- 							maxw = 1.5 * info.scale,
-		-- 							padding = 0.1 * info.scale,
-		-- 							r = 0.02 * info.scale,
-		-- 							colour = HEX("22222288"),
-		-- 							res = 0.5 * info.scale,
-		-- 						},
-		-- 						nodes = {
-		-- 							{
-		-- 								n = G.UIT.T,
-		-- 								config = {
-		-- 									text = "Hai!",
-		-- 									colour = G.C.WHITE,
-		-- 									scale = 0.5 * info.scale,
-		-- 								},
-		-- 							},
-		-- 						},
-		-- 					}, {
-		-- 						align = "tri",
-		-- 						offset = {
-		-- 							x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
-		-- 							y = 0.15 * info.scale,
-		-- 						},
-		-- 					}
-		-- 				end,
-		-- 			}
-		-- 		end,
-		-- 	})
-		-- end
-		if BalatroSR then
-			TheFamily.UI.create_card_area_card({
-				front_label = function(definition, card)
-					return {
-						text = "B:SR",
-					}
-				end,
-				center = "c_hsr_starrailpass",
-				replace_index = 3,
-				popup = function(definition, card)
-					return {
-						name = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Ticket shop",
-									scale = 0.4,
-									colour = G.C.WHITE,
-								},
-							},
-						},
-						description = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Clicking here to gamble!",
-									colour = G.C.BLACK,
-									scale = 0.3,
-								},
-							},
-						},
-					}
-				end,
-				alert = function()
-					return {
-						definition = function(definition, card)
-							local info = TheFamily.UI.get_ui_values()
-							return {
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-									minh = 0.3 * info.scale,
-									maxh = 1 * info.scale,
-									minw = 0.5 * info.scale,
-									maxw = 1.5 * info.scale,
-									padding = 0.1 * info.scale,
-									r = 0.02 * info.scale,
-									colour = HEX("22222288"),
-									res = 0.5 * info.scale,
-								},
-								nodes = {
-									{
-										n = G.UIT.O,
-										config = {
-											object = DynaText({
-												string = {
-													{
-														ref_table = setmetatable({}, {
-															__index = function(t, k)
-																if
-																	BalatroSR.hsr_gacha_shop_area
-																	and BalatroSR.hsr_gacha_shop_area.cards
-																then
-																	return #BalatroSR.hsr_gacha_shop_area.cards
-																else
-																	return 0
-																end
-															end,
-														}),
-														ref_value = "count",
-													},
-												},
-												colours = { G.C.WHITE },
-												shadow = true,
-												silent = true,
-												bump = true,
-												pop_in = 0.2,
-												scale = 0.4 * info.scale,
-											}),
-										},
-									},
-								},
-							}, {
-								align = "tri",
-								offset = {
-									x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
-									y = 0.15 * info.scale,
-								},
-							}
-						end,
-					}
-				end,
-				highlight = function()
-					BalatroSR.open_gacha_shop(true, true)
-					BalatroSR.open_gacha_results(true, true)
-				end,
-				can_highlight = function()
-					return G.STATE == G.STATES.SHOP
-				end,
-				unhighlight = function()
-					BalatroSR.open_gacha_shop(true, false)
-					BalatroSR.open_gacha_results(true, false)
-				end,
-			})
+		local tabs_to_render = {}
+		local start_index = 1 + TheFamily.UI.tabs_per_page * (TheFamily.UI.page - 1)
+		local end_index = start_index + TheFamily.UI.tabs_per_page
+		local current_index = 1
+		for _, group in ipairs(TheFamily.tab_groups.list) do
+			if current_index >= end_index then
+				break
+			end
+			if #group.tabs + current_index < start_index then
+				current_index = current_index + #group.tabs
+			else
+				for _, tab in ipairs(group.tabs) do
+					if current_index > end_index then
+						break
+					end
+					if current_index >= start_index then
+						table.insert(tabs_to_render, tab)
+					end
+					current_index = current_index + 1
+				end
+			end
 		end
-		if AKYRS and AKYRS.SOL then
-			TheFamily.UI.create_card_area_card({
-				front_label = function(definition, card)
-					return {
-						text = "Solitaire",
-					}
-				end,
-				center = function(definition, area)
-					local card = SMODS.create_card({
-						key = "j_akyrs_aikoyori",
-						no_edition = true,
-					})
-					card.children.floating_sprite.role.scale_bond = "Strong"
-					return card
-				end,
-				replace_index = 4,
-				popup = function(definition, card)
-					return {
-						name = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Solitaire",
-									scale = 0.4,
-									colour = G.C.WHITE,
-								},
-							},
-						},
-						-- description = {
-						-- 	{
-						-- 		n = G.UIT.T,
-						-- 		config = {
-						-- 			text = "Clicking here to gamble!",
-						-- 			colour = G.C.BLACK,
-						-- 			scale = 0.3,
-						-- 		},
-						-- 	},
-						-- },
-					}
-				end,
-				click = function()
-					G.SETTINGS.paused = true
-					G.FUNCS.overlay_menu({
-						definition = {
-							n = G.UIT.ROOT,
-							nodes = {
-								AKYRS.SOL.get_UI_definition(),
-							},
-						},
-						config = {},
-					})
-					return true
-				end,
-			})
+
+		for i = 1, TheFamily.UI.tabs_per_page do
+			if tabs_to_render[i] then
+				TheFamily.UI.create_card_area_card(tabs_to_render[i], i + 2)
+			else
+				TheFamily.UI.create_card_area_card({
+					filler = true,
+				}, i + 2)
+			end
 		end
 	end,
 }
 
+function TheFamily.create_tab_group(config)
+	if TheFamily.tab_groups.dictionary[config.key] then
+		return
+	end
+	local group = {
+		key = config.key,
+		order = config.order or #TheFamily.tab_groups.list,
+		tabs = {},
+	}
+	table.insert(TheFamily.tab_groups.list, group)
+	TheFamily.tab_groups.dictionary[group.key] = group
+	return group
+end
+function TheFamily.create_tab(config)
+	if TheFamily.tabs.dictionary[config.key] then
+		return
+	end
+	local tab = {
+		key = config.key,
+		order = config.order or #TheFamily.tabs.list,
+
+		front = config.front or nil,
+		front_label = config.front_label or nil,
+		center = config.center or "c_base",
+
+		popup = config.popup or nil,
+		alert = config.alert or nil,
+		update = config.update or nil,
+
+		can_highlight = config.can_highlight or nil,
+		highlight = config.highlight or nil,
+		unhighlight = config.unhighlight or nil,
+		click = config.click or nil,
+		keep_popup_when_highlighted = config.keep_popup_when_highlighted or false,
+
+		group_key = config.group_key or nil,
+		group = nil,
+	}
+	if tab.group_key then
+		local group = TheFamily.tab_groups.dictionary[tab.group_key]
+		if group then
+			tab.group = group
+			table.insert(group.tabs, tab)
+		else
+			tab.group = nil
+		end
+	end
+	table.insert(TheFamily.tabs.list, tab)
+	TheFamily.tabs.dictionary[tab.key] = tab
+	return tab
+end
+
 function TheFamily.init()
 	G.E_MANAGER:add_event(Event({
 		func = function()
+			table.sort(TheFamily.tabs.list, function(a, b)
+				return a.order < b.order
+			end)
+			table.sort(TheFamily.tab_groups.list, function(a, b)
+				return a.order < b.order
+			end)
+			for _, group in ipairs(TheFamily.tab_groups.list) do
+				table.sort(group.tabs, function(a, b)
+					return a.order < b.order
+				end)
+			end
 			TheFamily.UI.create_card_area()
 			TheFamily.UI.create_card_area_container()
 			TheFamily.UI.create_initial_cards()
 			TheFamily.UI.page = 1
+			TheFamily.UI.max_page = math.ceil(#TheFamily.tabs.list / TheFamily.UI.tabs_per_page)
 			TheFamily.UI.create_page_cards()
 			return true
 		end,
