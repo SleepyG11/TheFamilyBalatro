@@ -1,0 +1,24 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = -1
+
+# Init
+
+[[patches]]
+[patches.copy]
+target = "main.lua"
+position = "append"
+sources = ["index.lua"]
+
+# Draw UI
+[[patches]]
+[patches.pattern]
+target = "game.lua"
+pattern = '''self.GAME = saveTable and saveTable.GAME or self:init_game_object()'''
+position = "after"
+payload = '''
+TheFamily.init()
+'''
+match_indent = true
+overwrite = false

@@ -1,0 +1,12 @@
+{
+	"id": "thefamily",
+	"name": "TheFamily",
+	"display_name": "TheFamily",
+	"author": ["SleepyG11"],
+	"description": "Cleanup screen space",
+	"prefix": "thefamily",
+	"main_file": "steamodded.lua",
+	"priority": 0,
+	"version": "0.1.0",
+	"dependencies": []
+}
