@@ -908,6 +908,9 @@ function TheFamily.init()
 
 			TheFamily.UI.page = 1
 			TheFamily.UI.max_page = math.ceil(#TheFamily.tabs.list / TheFamily.UI.tabs_per_page)
+
+			TheFamily.own_tabs.time_tracker.last_hand = 0
+
 			TheFamily.UI.create_page_cards()
 			return true
 		end,
@@ -941,3 +944,236 @@ end
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
 --- @field tabs TheFamilyTab[]
+
+-- My own tabs, because why not
+TheFamily.own_tabs.time_tracker = {
+	alert_label = os.date("%I:%M:%S %p", os.time()),
+	real_time_label = os.date("%I:%M:%S %p", os.time()),
+
+	current_hand_start = 0,
+	current_hand_time = 0,
+	current_hand_label = "Not played yet",
+
+	last_hand = 0,
+	last_hand_label = "Not played yet",
+
+	session_start = love.timer.getTime(),
+	session_label = "00:00",
+
+	acceleration_label = "1x",
+
+	format_time = function(time, with_ms, always_h)
+		local result = os.date("%M:%S", time)
+		if with_ms then
+			local ms = math.floor((time - math.floor(time)) * 1000 + 0.5)
+			result = result .. "." .. string.format("%03d", ms)
+		end
+
+		local h = math.floor(time / 3600)
+		if h > 0 or always_h then
+			result = string.format(always_h and "%02d" or "%01d", h) .. ":" .. result
+		end
+		return result
+	end,
+
+	load = function()
+		local self = TheFamily.own_tabs.time_tracker
+		self.last_hand = 0
+		self.last_hand_label = self.format_time(self.last_hand, true)
+		self.current_hand_time = 0
+		self.current_hand_start = 0
+		self.current_hand_label = "Not played yet"
+	end,
+
+	update_alert_text = function(dt)
+		local self = TheFamily.own_tabs.time_tracker
+		self.real_time_label = os.date("%I:%M:%S %p", os.time())
+		self.session_label = self.format_time(love.timer.getTime() - self.session_start, false, true)
+		self.acceleration_label = string.format("x%.2f", G.SPEEDFACTOR or 0)
+		if G.STATE == G.STATES.HAND_PLAYED then
+			if self.current_hand_start == 0 then
+				self.current_hand_start = love.timer.getTime()
+			end
+			self.current_hand_time = love.timer.getTime()
+			self.current_hand_label = self.format_time(self.current_hand_time - self.current_hand_start, true)
+			self.alert_label = string.format("%s (%s)", self.current_hand_label, self.acceleration_label)
+		else
+			if self.current_hand_time > 0 then
+				self.last_hand = self.current_hand_time - self.current_hand_start
+				self.last_hand_label = self.format_time(self.last_hand, true)
+				self.current_hand_time = 0
+				self.current_hand_start = 0
+				self.current_hand_label = "Not played yet"
+			end
+			self.alert_label = os.date("%I:%M:%S %p", os.time())
+		end
+	end,
+}
+
+TheFamily.create_tab_group({
+	key = "thefamily_default",
+	order = 0,
+})
+TheFamily.create_tab({
+	key = "thefamily_time",
+	order = 0,
+	group_key = "thefamily_default",
+	center = "v_hieroglyph",
+
+	front_label = function()
+		return {
+			text = "Time",
+		}
+	end,
+	update = function(defitinion, card, dt)
+		TheFamily.own_tabs.time_tracker.update_alert_text(dt)
+	end,
+	alert = function(definition, card)
+		return {
+			definition_function = function()
+				local info = TheFamily.UI.get_ui_values()
+				return {
+					definition = {
+						n = G.UIT.R,
+						config = {
+							align = "cm",
+							minh = 0.3 * info.scale,
+							maxh = 1 * info.scale,
+							minw = 0.5 * info.scale,
+							maxw = 1.5 * info.scale,
+							padding = 0.1 * info.scale,
+							r = 0.02 * info.scale,
+							colour = HEX("22222288"),
+							res = 0.5 * info.scale,
+						},
+						nodes = {
+							{
+								n = G.UIT.O,
+								config = {
+									object = DynaText({
+										string = {
+											{
+												ref_table = TheFamily.own_tabs.time_tracker,
+												ref_value = "alert_label",
+											},
+										},
+										colours = { G.C.WHITE },
+										shadow = true,
+										silent = true,
+										bump = true,
+										pop_in = 0.2,
+										scale = 0.4 * info.scale,
+									}),
+								},
+							},
+						},
+					},
+					config = {
+						align = "tri",
+						offset = {
+							x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
+							y = 0.15 * info.scale,
+						},
+					},
+				}
+			end,
+		}
+	end,
+	popup = function(definition, card)
+		local function create_time_row(row)
+			return {
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 2.5,
+							maxw = 2.5,
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = row.text,
+									colour = G.C.UI.TEXT_DARK,
+									scale = 0.3,
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 0.25,
+							maxw = 0.25,
+						},
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 2,
+							maxw = 2,
+						},
+						nodes = {
+							{
+								n = G.UIT.O,
+								config = {
+									object = DynaText({
+										string = {
+											{
+												ref_table = row.ref_table,
+												ref_value = row.ref_value,
+											},
+										},
+										colours = { G.C.CHIPS },
+										maxw = 3,
+										scale = 0.3,
+									}),
+								},
+							},
+						},
+					},
+				},
+			}
+		end
+		return {
+			name = {},
+			description = {
+				{
+					create_time_row({
+						text = "Real time",
+						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_value = "real_time_label",
+					}),
+					create_time_row({
+						text = "This session",
+						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_value = "session_label",
+					}),
+					create_time_row({
+						text = "Game speed",
+						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_value = "acceleration_label",
+					}),
+				},
+				{
+					create_time_row({
+						text = "Last hand",
+						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_value = "last_hand_label",
+					}),
+					create_time_row({
+						text = "Current hand",
+						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_value = "current_hand_label",
+					}),
+				},
+			},
+		}
+	end,
+
+	keep_popup_when_highlighted = true,
+})
