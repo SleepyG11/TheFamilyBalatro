@@ -5,6 +5,7 @@ TheFamily.create_tab_group({
 TheFamily.create_tab({
 	key = "example_showman",
 	group_key = "example_vanilla",
+	type = "switch",
 
 	front_label = function(definition, card)
 		return {
@@ -171,6 +172,7 @@ if BalatroSR then
 	TheFamily.create_tab({
 		key = "example_gacha_shop",
 		group_key = "example_starrail_group",
+		keep = true,
 		order = 0,
 
 		front_label = function(definition, card)

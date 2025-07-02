@@ -165,7 +165,7 @@ TheFamily.UI = {
 			end
 
 			if card.thefamily_definition.key then
-				TheFamily.opened_tabs[card.thefamily_definition.key] = true
+				TheFamily.opened_tabs.dictionary[card.thefamily_definition.key] = true
 				if card.thefamily_definition.type == "overlay" then
 					TheFamily.opened_tabs.overlay_key = card.thefamily_definition.key
 				end
@@ -196,25 +196,29 @@ TheFamily.UI = {
 		end
 		local old_update = selector_area.update
 		function selector_area:update(dt)
-			if TheFamily.opened_tabs.overlay_key then
-				local definition = TheFamily.tabs.dictionary[TheFamily.opened_tabs.overlay_key]
-				if type(definition.can_highlight) == "function" and not definition.can_highlight(definition, nil) then
-					if type(definition.unhighlight) == "function" then
-						definition.unhighlight(definition, nil)
-					end
-					TheFamily.opened_tabs.dictionary[TheFamily.opened_tabs.overlay_key] = nil
-					TheFamily.opened_tabs.overlay_key = nil
-				end
-			end
-			old_update(self, dt)
+			local tabs_to_remove = {}
 			for key, _ in pairs(TheFamily.opened_tabs.dictionary) do
 				if not TheFamily.rendered_tabs.dictionary[key] then
-					local definition = TheFamily.tabs.dictionary[TheFamily.opened_tabs.overlay_key]
-					if type(definition.update) == "function" then
+					local definition = TheFamily.tabs.dictionary[key]
+					if
+						type(definition.can_highlight) == "function" and not definition.can_highlight(definition, nil)
+					then
+						if type(definition.unhighlight) == "function" then
+							definition.unhighlight(definition, nil)
+						end
+						table.insert(tabs_to_remove, definition.key)
+					elseif type(definition.update) == "function" then
 						definition.update(definition, nil, dt)
 					end
 				end
 			end
+			for _, key in ipairs(tabs_to_remove) do
+				TheFamily.opened_tabs.dictionary[key] = nil
+				if TheFamily.opened_tabs.overlay_key == key then
+					TheFamily.opened_tabs.overlay_key = nil
+				end
+			end
+			old_update(self, dt)
 		end
 		if TheFamily.UI.area then
 			TheFamily.UI.area:remove()
@@ -639,7 +643,7 @@ TheFamily.UI = {
 			card.thefamily_definition = definition
 			TheFamily.UI.set_card_update(definition, card)
 		end
-		if card and definition.keep and definition.key and TheFamily.opened_tabs[definition.key] then
+		if card and definition.keep and definition.key and TheFamily.opened_tabs.dictionary[definition.key] then
 			TheFamily.UI.area:add_to_highlighted(card, true)
 		end
 		return card
@@ -649,11 +653,6 @@ TheFamily.UI = {
 		TheFamily.UI.create_card_area_card({
 			center = "j_family",
 			emplace = true,
-			alert = function()
-				return {
-					text = "!",
-				}
-			end,
 		})
 		TheFamily.UI.create_card_area_card({
 			separator = true,
@@ -705,75 +704,79 @@ TheFamily.UI = {
 			alert = function(definition, card)
 				local info = TheFamily.UI.get_ui_values()
 				return {
-					definition = {
-						n = G.UIT.R,
-						config = {
-							align = "cm",
-							minh = 0.3 * info.scale,
-							maxh = 1 * info.scale,
-							minw = 0.5 * info.scale,
-							maxw = 1.5 * info.scale,
-							padding = 0.1 * info.scale,
-							r = 0.02 * info.scale,
-							colour = HEX("22222288"),
-							res = 0.5 * info.scale,
-						},
-						nodes = {
-							{
-								n = G.UIT.O,
+					definition_function = function()
+						return {
+							definition = {
+								n = G.UIT.R,
 								config = {
-									object = DynaText({
-										string = {
-											{
-												ref_table = TheFamily.UI,
-												ref_value = "page",
-											},
+									align = "cm",
+									minh = 0.3 * info.scale,
+									maxh = 1 * info.scale,
+									minw = 0.5 * info.scale,
+									maxw = 1.5 * info.scale,
+									padding = 0.1 * info.scale,
+									r = 0.02 * info.scale,
+									colour = HEX("22222288"),
+									res = 0.5 * info.scale,
+								},
+								nodes = {
+									{
+										n = G.UIT.O,
+										config = {
+											object = DynaText({
+												string = {
+													{
+														ref_table = TheFamily.UI,
+														ref_value = "page",
+													},
+												},
+												colours = { G.C.WHITE },
+												shadow = true,
+												silent = true,
+												bump = true,
+												pop_in = 0.2,
+												scale = 0.4 * info.scale,
+											}),
 										},
-										colours = { G.C.WHITE },
-										shadow = true,
-										silent = true,
-										bump = true,
-										pop_in = 0.2,
-										scale = 0.4 * info.scale,
-									}),
-								},
-							},
-							{
-								n = G.UIT.T,
-								config = {
-									text = "/",
-									colour = G.C.WHITE,
-									scale = 0.4 * info.scale,
-								},
-							},
-							{
-								n = G.UIT.O,
-								config = {
-									object = DynaText({
-										string = {
-											{
-												ref_table = TheFamily.UI,
-												ref_value = "max_page",
-											},
+									},
+									{
+										n = G.UIT.T,
+										config = {
+											text = "/",
+											colour = G.C.WHITE,
+											scale = 0.4 * info.scale,
 										},
-										colours = { G.C.WHITE },
-										shadow = true,
-										silent = true,
-										bump = true,
-										pop_in = 0.2,
-										scale = 0.4 * info.scale,
-									}),
+									},
+									{
+										n = G.UIT.O,
+										config = {
+											object = DynaText({
+												string = {
+													{
+														ref_table = TheFamily.UI,
+														ref_value = "max_page",
+													},
+												},
+												colours = { G.C.WHITE },
+												shadow = true,
+												silent = true,
+												bump = true,
+												pop_in = 0.2,
+												scale = 0.4 * info.scale,
+											}),
+										},
+									},
 								},
 							},
-						},
-					},
-					definition_config = {
-						align = "tri",
-						offset = {
-							x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
-							y = 0.15 * info.scale,
-						},
-					},
+							config = {
+								align = "tri",
+								offset = {
+									x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
+									y = 0.15 * info.scale,
+								},
+							},
+						}
+					end,
 				}
 			end,
 		})
