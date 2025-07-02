@@ -610,6 +610,34 @@ TheFamily.UI = {
 		end
 		TheFamily.__prevent_used_jokers = nil
 		if card then
+			function definition.rerender_alert()
+				if card.REMOVED then
+					return
+				end
+				if card.children.alert then
+					card.children.alert:remove()
+					card.children.alert = nil
+				end
+				card:update(0)
+			end
+			function definition.rerender_front_label()
+				if card.REMOVED then
+					return
+				end
+				if card.children.front_label then
+					card.children.front_label:remove()
+					card.children.front_label = nil
+				end
+				card:update(0)
+			end
+
+			local old_remove = card.remove
+			function card:remove(...)
+				old_remove(self, ...)
+				function definition.rerender_alert() end
+				function definition.rerender_front_label() end
+			end
+
 			card:hard_set_T(nil, nil, card.T.w * TheFamily.UI.scale, card.T.h * TheFamily.UI.scale)
 			remove_all(card.children)
 			card.children = {}
@@ -869,6 +897,9 @@ function TheFamily.create_tab(config)
 		group = nil,
 
 		update = config.update or nil,
+
+		rerender_alert = function() end,
+		rerender_front_label = function() end,
 	}
 	if tab.group_key then
 		local group = TheFamily.tab_groups.dictionary[tab.group_key]
@@ -941,6 +972,8 @@ end
 
 --- @class TheFamilyTab: TheFamilyTabOptions
 --- @field group TheFamilyGroup
+--- @field rerender_alert fun() Function to manually rerender alert
+--- @field rerender_front_label fun() Function to manually rerender front_label
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
 --- @field tabs TheFamilyTab[]
