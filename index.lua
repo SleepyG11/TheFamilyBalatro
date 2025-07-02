@@ -560,6 +560,7 @@ TheFamily.UI = {
 	end,
 	create_card_area_card = function(definition, replace_index)
 		local card
+		TheFamily.__prevent_used_jokers = true
 		if definition.separator or definition.filler then
 			local area = TheFamily.UI.area
 			card = Card(area.T.x + area.T.w / 2, area.T.y, G.CARD_W, G.CARD_H, nil, G.P_CENTERS.c_base, {
@@ -607,6 +608,7 @@ TheFamily.UI = {
 			card.states.hover.can = true
 			card.states.visible = true
 		end
+		TheFamily.__prevent_used_jokers = nil
 		if card then
 			card:hard_set_T(nil, nil, card.T.w * TheFamily.UI.scale, card.T.h * TheFamily.UI.scale)
 			remove_all(card.children)
@@ -819,6 +821,8 @@ TheFamily.UI = {
 		end
 	end,
 }
+
+TheFamily.own_tabs = {}
 
 --- @param config TheFamilyGroupOptions
 --- @return TheFamilyGroup

@@ -1,0 +1,16 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = -1
+
+# Prevent setting G.GAME.used_jokers for cards created for tabs
+[[patches]]
+[patches.pattern]
+target = "card.lua"
+pattern = '''if not G.OVERLAY_MENU then'''
+position = "at"
+payload = '''
+if not G.OVERLAY_MENU and not TheFamily.__prevent_used_jokers then
+'''
+match_indent = true
+overwrite = false
