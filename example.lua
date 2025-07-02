@@ -63,6 +63,11 @@ TheFamily.create_tab({
 	end,
 	keep_popup_when_highlighted = true,
 	alert = function(definition, card)
+		if G.STATE == G.STATES.SHOP then
+			return {
+				remove = true,
+			}
+		end
 		return {
 			text = "!",
 		}
@@ -113,39 +118,43 @@ TheFamily.create_tab({
 	end,
 	keep_popup_when_highlighted = true,
 	alert = function(definition, card)
-		local info = TheFamily.UI.get_ui_values() -- Function which returns UI varibles like rotation, scale and gap
 		return {
-			definition = {
-				n = G.UIT.R,
-				config = {
-					align = "cm",
-					minh = 0.3 * info.scale,
-					maxh = 1 * info.scale,
-					minw = 0.5 * info.scale,
-					maxw = 1.5 * info.scale,
-					padding = 0.1 * info.scale,
-					r = 0.02 * info.scale,
-					colour = HEX("22222288"),
-					res = 0.5 * info.scale,
-				},
-				nodes = {
-					{
-						n = G.UIT.T,
+			definition_function = function()
+				local info = TheFamily.UI.get_ui_values() -- Function which returns UI varibles like rotation, scale and gap
+				return {
+					definition = {
+						n = G.UIT.R,
 						config = {
-							text = "Click me!",
-							colour = G.C.WHITE,
-							scale = 0.4 * info.scale,
+							align = "cm",
+							minh = 0.3 * info.scale,
+							maxh = 1 * info.scale,
+							minw = 0.5 * info.scale,
+							maxw = 1.5 * info.scale,
+							padding = 0.1 * info.scale,
+							r = 0.02 * info.scale,
+							colour = HEX("22222288"),
+							res = 0.5 * info.scale,
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Click me!",
+									colour = G.C.WHITE,
+									scale = 0.4 * info.scale,
+								},
+							},
 						},
 					},
-				},
-			},
-			definition_config = {
-				align = "tri",
-				offset = {
-					x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
-					y = 0.15 * info.scale,
-				},
-			},
+					config = {
+						align = "tri",
+						offset = {
+							x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
+							y = 0.15 * info.scale,
+						},
+					},
+				}
+			end,
 		}
 	end,
 

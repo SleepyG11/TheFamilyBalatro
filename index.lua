@@ -351,11 +351,13 @@ TheFamily.UI = {
 			end
 
 			if type(definition.alert) == "function" then
-				if not self.children.alert then
-					local args = definition.alert(definition, self) or {}
+				local args = definition.alert(definition, self) or {}
+				if not args.remove and not self.children.alert then
 					local content, config
-					if args.definition then
-						content, config = args.definition, args.definition_config
+					if type(args.definition_function) == "function" then
+						local def = args.definition_function()
+						content = def.definition
+						config = def.config
 					end
 					config = config
 						or {
@@ -423,6 +425,9 @@ TheFamily.UI = {
 					box.T.r = 0
 					box.T.scale = TheFamily.UI.scale
 					self.children.alert = box
+				elseif args.remove and self.children.alert then
+					self.children.alert:remove()
+					self.children.alert = nil
 				end
 			else
 				if self.children.alert then
@@ -432,8 +437,8 @@ TheFamily.UI = {
 			end
 
 			if type(definition.front_label) == "function" then
-				if not self.children.front_label then
-					local front_label = definition.front_label(definition, self) or {}
+				local front_label = definition.front_label(definition, self) or {}
+				if not front_label.remove and not self.children.front_label then
 					local box = UIBox({
 						definition = {
 							n = G.UIT.ROOT,
@@ -474,6 +479,9 @@ TheFamily.UI = {
 					box.role.r_bond = "Weak"
 					box.T.r = math.rad(TheFamily.UI.r + 90)
 					self.children.front_label = box
+				elseif front_label.remove and self.children.front_label then
+					self.children.front_label:remove()
+					self.children.front_label = nil
 				end
 			else
 				if self.children.front_label then
@@ -833,10 +841,10 @@ end
 --- @field order? number Value user for sorting, from lowest to highest
 --- @field front? string Key from G.P_CARDS to set card's front
 --- @field center? string | fun(definition: TheFamilyTab, area: CardArea): Card Key from G.P_CENTERS, or function which return fully created card (`create_card()` or `SMODS.create_card()`, for example). **DO NOT EMPLACE IT!**
---- @field front_label? fun(definition: TheFamilyTab, card: Card): { text?: string, colour?: table, scale?: number } Function which returns config for displaying text on a card
+--- @field front_label? fun(definition: TheFamilyTab, card: Card): { text?: string, colour?: table, scale?: number } | { remove: true } Function which returns: config for displaying text on a card, or table with `remove = true` for cleaning up
 --- @field popup? fun(definition: TheFamilyTab, card: Card): { name?: table, description?: table[] } Function which returns config for displaying popup on hover. Rerenders when tab is (de)selected, use `card.highlighted` to determine is tab selected
 --- @field keep_popup_when_highlighted? boolean When set to `true` and card is highlighted, popup will stay even if card will be not hovered
---- @field alert? fun(definition: TheFamilyTab, card: Card): table | { definition: table, definition_config?: table } Function which returns config for vanilla `create_UIBox_card_alert()` function, or custom definition for it
+--- @field alert? fun(definition: TheFamilyTab, card: Card): table | { definition_function: fun(): { definition: table, config: table } } | { remove: true } Function which returns: config for vanilla `create_UIBox_card_alert()` function, or function which returns custom definition for it, or table with `remove = true` for cleaning up
 --- @field can_highlight? fun(definition: TheFamilyTab, card: Card): boolean Function which controls can card be highlighted. When value will change to `false`, card will automatically unhighlight
 --- @field highlight? fun(definition: TheFamilyTab, card: Card) Callback when card is highlighted
 --- @field unhighlight? fun(definition: TheFamilyTab, card: Card) Callback when card is unhighlighted
