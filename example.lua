@@ -1,3 +1,5 @@
+-- Types can be found in types.lua file
+
 TheFamily.create_tab_group({
 	key = "example_vanilla",
 	order = 1,
