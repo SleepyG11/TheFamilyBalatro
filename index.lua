@@ -820,17 +820,19 @@ TheFamily.UI = {
 			if current_index >= end_index then
 				break
 			end
-			if #group.tabs + current_index < start_index then
-				current_index = current_index + #group.tabs
-			else
-				for _, tab in ipairs(group.tabs) do
-					if current_index > end_index then
-						break
+			if group.is_enabled then
+				if #group.enabled_tabs + current_index < start_index then
+					current_index = current_index + #group.enabled_tabs
+				else
+					for _, tab in ipairs(group.enabled_tabs) do
+						if current_index > end_index then
+							break
+						end
+						if current_index >= start_index then
+							table.insert(tabs_to_render, tab)
+						end
+						current_index = current_index + 1
 					end
-					if current_index >= start_index then
-						table.insert(tabs_to_render, tab)
-					end
-					current_index = current_index + 1
 				end
 			end
 		end
@@ -861,7 +863,12 @@ function TheFamily.create_tab_group(config)
 	local group = {
 		key = config.key,
 		order = config.order or #TheFamily.tab_groups.list,
+
 		tabs = {},
+		enabled_tabs = {},
+
+		enabled = config.enabled or nil,
+		is_enabled = false,
 	}
 	table.insert(TheFamily.tab_groups.list, group)
 	TheFamily.tab_groups.dictionary[group.key] = group
@@ -898,6 +905,9 @@ function TheFamily.create_tab(config)
 
 		update = config.update or nil,
 
+		enabled = config.enabled or nil,
+		is_enabled = false,
+
 		rerender_alert = function() end,
 		rerender_front_label = function() end,
 	}
@@ -921,6 +931,14 @@ function TheFamily.init()
 			TheFamily.opened_tabs.dictionary = {}
 			TheFamily.opened_tabs.overlay_key = nil
 
+			for _, tab in ipairs(TheFamily.tabs.list) do
+				if type(tab.enabled) == "function" and not tab.enabled(tab) then
+					tab.is_enabled = false
+				else
+					tab.is_enabled = true
+				end
+			end
+
 			table.sort(TheFamily.tabs.list, function(a, b)
 				return not a.order or not b.order or a.order < b.order
 			end)
@@ -928,7 +946,21 @@ function TheFamily.init()
 				return not a.order or not b.order or a.order < b.order
 			end)
 			for _, group in ipairs(TheFamily.tab_groups.list) do
+				if type(group.enabled) == "function" and not group.enabled(group) then
+					group.is_enabled = false
+				else
+					group.is_enabled = true
+				end
 				table.sort(group.tabs, function(a, b)
+					return not a.order or not b.order or a.order < b.order
+				end)
+				group.enabled_tabs = {}
+				for _, tab in ipairs(group.tabs) do
+					if tab.is_enabled then
+						table.insert(group.enabled_tabs, tab)
+					end
+				end
+				table.sort(group.enabled_tabs, function(a, b)
 					return not a.order or not b.order or a.order < b.order
 				end)
 			end
@@ -951,6 +983,7 @@ end
 --- @class TheFamilyGroupOptions: table
 --- @field key string Unique key
 --- @field order? number Value user for sorting, from lowest to highest
+--- @field enabled? fun(definition: TheFamilyGroup): boolean Function which determines can tabs inside this group be created
 
 --- @class TheFamilyTabOptions: table
 --- @field key string Unique key
@@ -969,14 +1002,18 @@ end
 --- @field unhighlight? fun(definition: TheFamilyTab, card?: Card) Callback when card is unhighlighted. If `type = overlay` and `keep = true`, callback can be called without card object when it needs to be deselected but not rendered in current page
 --- @field click? fun(definition: TheFamilyTab, card: Card): boolean Callback when card is clicked. If callback returns `true`, other events will not be fired (ex. card highlight)
 --- @field update? fun(definition: TheFamilyTab, card?: Card, dt: number) Update function. Happends before setting all popups, alerts, etc. If `keep = true`, callback can be called without card object if tab is selected but not rendered in current page
+--- @field enabled? fun(definition: TheFamilyTab): boolean Function which determines can this tab be created
 
 --- @class TheFamilyTab: TheFamilyTabOptions
 --- @field group TheFamilyGroup
+--- @field is_enabled boolean
 --- @field rerender_alert fun() Function to manually rerender alert
 --- @field rerender_front_label fun() Function to manually rerender front_label
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
 --- @field tabs TheFamilyTab[]
+--- @field enabled_tabs TheFamilyTab[]
+--- @field is_enabled boolean
 
 -- My own tabs, because why not
 TheFamily.own_tabs.time_tracker = {
