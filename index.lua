@@ -11,6 +11,14 @@ TheFamily.tab_groups = {
 	list = {},
 }
 
+TheFamily.opened_tabs = {
+	overlay_key = nil,
+	dictionary = {},
+}
+TheFamily.rendered_tabs = {
+	dictionary = {},
+}
+
 TheFamily.UI = {
 	r = -70,
 	gap = 0.53,
@@ -72,10 +80,12 @@ TheFamily.UI = {
 			end
 		end
 		local old_remove_from = selector_area.remove_from_highlighted
-		function selector_area:remove_from_highlighted(card)
+		function selector_area:remove_from_highlighted(card, silent)
 			old_remove_from(self, card)
-			if type(card.thefamily_definition.unhighlight) == "function" then
-				card.thefamily_definition.unhighlight(card.thefamily_definition, card)
+			if not silent then
+				if type(card.thefamily_definition.unhighlight) == "function" then
+					card.thefamily_definition.unhighlight(card.thefamily_definition, card)
+				end
 			end
 			if card.states.hover.is and type(card.thefamily_definition.popup) == "function" then
 				if card.children.h_popup then
@@ -85,37 +95,61 @@ TheFamily.UI = {
 				end
 				TheFamily.UI.set_card_h_popup(card.thefamily_definition, card)
 			end
+			if not silent and card.thefamily_definition.key then
+				TheFamily.opened_tabs.dictionary[card.thefamily_definition.key] = nil
+				if TheFamily.opened_tabs.overlay_key == card.thefamily_definition.key then
+					TheFamily.opened_tabs.overlay_key = nil
+				end
+			end
 		end
 		function selector_area:add_to_highlighted(card, silent)
 			if not self.cards or not self.cards[1] then
 				return
 			end
 
-			if
-				type(card.thefamily_definition.can_highlight) == "function"
-				and not card.thefamily_definition.can_highlight(card.thefamily_definition, card)
-			then
-				return
-			end
+			if not silent then
+				if
+					type(card.thefamily_definition.can_highlight) == "function"
+					and not card.thefamily_definition.can_highlight(card.thefamily_definition, card)
+				then
+					return
+				end
 
-			-- First card can be selected over limit
-			local is_first_selected = self.cards[1].highlighted
-			if
-				card ~= self.cards[1]
-				and (#self.highlighted - (is_first_selected and 1 or 0) >= self.config.highlighted_limit)
-			then
-				-- search for eligible card for deselect
-				for _, highlighted_card in ipairs(self.highlighted) do
-					if highlighted_card ~= self.cards[1] then
-						self:remove_from_highlighted(highlighted_card)
-						break
+				if card.thefamily_definition.type == "overlay" and card ~= self.cards[1] then
+					-- First card can be selected over limit
+					local is_first_selected = self.cards[1].highlighted
+					local is_deselected = false
+					if #self.highlighted - (is_first_selected and 1 or 0) >= self.config.highlighted_limit then
+						-- search for eligible card for deselect
+						for _, highlighted_card in ipairs(self.highlighted) do
+							if
+								highlighted_card ~= self.cards[1]
+								and highlighted_card.thefamily_definition.type == "overlay"
+							then
+								self:remove_from_highlighted(highlighted_card)
+								is_deselected = true
+								break
+							end
+						end
+					end
+					if not is_deselected and TheFamily.opened_tabs.overlay_key then
+						local deseleted_definition = TheFamily.tabs.dictionary[TheFamily.opened_tabs.overlay_key]
+						if type(deseleted_definition.unhighlight) == "function" then
+							deseleted_definition.unhighlight(deseleted_definition, nil)
+						end
+						TheFamily.opened_tabs.dictionary[TheFamily.opened_tabs.overlay_key] = nil
+						TheFamily.opened_tabs.overlay_key = nil
 					end
 				end
 			end
+
 			self.highlighted[#self.highlighted + 1] = card
 			card.highlighted = true
-			if type(card.thefamily_definition.highlight) == "function" then
-				card.thefamily_definition.highlight(card.thefamily_definition, card)
+
+			if not silent then
+				if type(card.thefamily_definition.highlight) == "function" then
+					card.thefamily_definition.highlight(card.thefamily_definition, card)
+				end
 			end
 
 			if
@@ -128,6 +162,13 @@ TheFamily.UI = {
 					card.children.h_popup = nil
 				end
 				TheFamily.UI.set_card_h_popup(card.thefamily_definition, card)
+			end
+
+			if card.thefamily_definition.key then
+				TheFamily.opened_tabs[card.thefamily_definition.key] = true
+				if card.thefamily_definition.type == "overlay" then
+					TheFamily.opened_tabs.overlay_key = card.thefamily_definition.key
+				end
 			end
 
 			if not silent then
@@ -149,6 +190,28 @@ TheFamily.UI = {
 						if G.CONTROLLER.dragging.target ~= self.cards[i] then
 							self.cards[i]:draw(v)
 						end
+					end
+				end
+			end
+		end
+		local old_update = selector_area.update
+		function selector_area:update(dt)
+			if TheFamily.opened_tabs.overlay_key then
+				local definition = TheFamily.tabs.dictionary[TheFamily.opened_tabs.overlay_key]
+				if type(definition.can_highlight) == "function" and not definition.can_highlight(definition, nil) then
+					if type(definition.unhighlight) == "function" then
+						definition.unhighlight(definition, nil)
+					end
+					TheFamily.opened_tabs.dictionary[TheFamily.opened_tabs.overlay_key] = nil
+					TheFamily.opened_tabs.overlay_key = nil
+				end
+			end
+			old_update(self, dt)
+			for key, _ in pairs(TheFamily.opened_tabs.dictionary) do
+				if not TheFamily.rendered_tabs.dictionary[key] then
+					local definition = TheFamily.tabs.dictionary[TheFamily.opened_tabs.overlay_key]
+					if type(definition.update) == "function" then
+						definition.update(definition, nil, dt)
 					end
 				end
 			end
@@ -561,7 +624,7 @@ TheFamily.UI = {
 				local target_index = replace_index
 				local target_card = TheFamily.UI.area.cards[target_index]
 				if target_card.highlighted then
-					TheFamily.UI.area:remove_from_highlighted(target_card, true)
+					TheFamily.UI.area:remove_from_highlighted(target_card, target_card.thefamily_definition.keep)
 				end
 				target_card:remove()
 				TheFamily.UI.area:emplace(card)
@@ -575,6 +638,9 @@ TheFamily.UI = {
 			end
 			card.thefamily_definition = definition
 			TheFamily.UI.set_card_update(definition, card)
+		end
+		if card and definition.keep and definition.key and TheFamily.opened_tabs[definition.key] then
+			TheFamily.UI.area:add_to_highlighted(card, true)
 		end
 		return card
 	end,
@@ -736,9 +802,12 @@ TheFamily.UI = {
 			end
 		end
 
+		TheFamily.rendered_tabs.dictionary = {}
+
 		for i = 1, TheFamily.UI.tabs_per_page do
 			if tabs_to_render[i] then
 				TheFamily.UI.create_card_area_card(tabs_to_render[i], i + 2)
+				TheFamily.rendered_tabs.dictionary[tabs_to_render[i].key] = true
 			else
 				TheFamily.UI.create_card_area_card({
 					filler = true,
@@ -773,6 +842,8 @@ function TheFamily.create_tab(config)
 	local tab = {
 		key = config.key,
 		order = config.order or #TheFamily.tabs.list,
+		type = config.type or "overlay",
+		keep = config.keep or false,
 
 		front = config.front or nil,
 		center = config.center or "c_base",
@@ -809,6 +880,9 @@ end
 function TheFamily.init()
 	G.E_MANAGER:add_event(Event({
 		func = function()
+			TheFamily.opened_tabs.dictionary = {}
+			TheFamily.opened_tabs.overlay_key = nil
+
 			table.sort(TheFamily.tabs.list, function(a, b)
 				return not a.order or not b.order or a.order < b.order
 			end)
@@ -820,9 +894,11 @@ function TheFamily.init()
 					return not a.order or not b.order or a.order < b.order
 				end)
 			end
+
 			TheFamily.UI.create_card_area()
 			TheFamily.UI.create_card_area_container()
 			TheFamily.UI.create_initial_cards()
+
 			TheFamily.UI.page = 1
 			TheFamily.UI.max_page = math.ceil(#TheFamily.tabs.list / TheFamily.UI.tabs_per_page)
 			TheFamily.UI.create_page_cards()
@@ -839,17 +915,19 @@ end
 --- @field key string Unique key
 --- @field group_key string Unique key of group to be assigned for
 --- @field order? number Value user for sorting, from lowest to highest
+--- @field type? "switch"|"overlay" Determines highlight behaviour: only one tab with type `overlay` can be selected at a time; `switch` is independent. (default is `overlay`)
+--- @field keep? boolean Should prevent tab from deselecting when another page is opened
 --- @field front? string Key from G.P_CARDS to set card's front
 --- @field center? string | fun(definition: TheFamilyTab, area: CardArea): Card Key from G.P_CENTERS, or function which return fully created card (`create_card()` or `SMODS.create_card()`, for example). **DO NOT EMPLACE IT!**
 --- @field front_label? fun(definition: TheFamilyTab, card: Card): { text?: string, colour?: table, scale?: number } | { remove: true } Function which returns: config for displaying text on a card, or table with `remove = true` for cleaning up
 --- @field popup? fun(definition: TheFamilyTab, card: Card): { name?: table, description?: table[] } Function which returns config for displaying popup on hover. Rerenders when tab is (de)selected, use `card.highlighted` to determine is tab selected
 --- @field keep_popup_when_highlighted? boolean When set to `true` and card is highlighted, popup will stay even if card will be not hovered
 --- @field alert? fun(definition: TheFamilyTab, card: Card): table | { definition_function: fun(): { definition: table, config: table } } | { remove: true } Function which returns: config for vanilla `create_UIBox_card_alert()` function, or function which returns custom definition for it, or table with `remove = true` for cleaning up
---- @field can_highlight? fun(definition: TheFamilyTab, card: Card): boolean Function which controls can card be highlighted. When value will change to `false`, card will automatically unhighlight
+--- @field can_highlight? fun(definition: TheFamilyTab, card?: Card): boolean Function which controls can card be highlighted. When value will change to `false`, card will automatically unhighlight. If `keep = true`, callback can be called without card object if tab is selected but not rendered in current page
 --- @field highlight? fun(definition: TheFamilyTab, card: Card) Callback when card is highlighted
---- @field unhighlight? fun(definition: TheFamilyTab, card: Card) Callback when card is unhighlighted
+--- @field unhighlight? fun(definition: TheFamilyTab, card?: Card) Callback when card is unhighlighted. If `type = overlay` and `keep = true`, callback can be called without card object when it needs to be deselected but not rendered in current page
 --- @field click? fun(definition: TheFamilyTab, card: Card): boolean Callback when card is clicked. If callback returns `true`, other events will not be fired (ex. card highlight)
---- @field update? fun(definition: TheFamilyTab, card: Card, dt: number) Update function. Happends before setting all popups, alerts, etc
+--- @field update? fun(definition: TheFamilyTab, card?: Card, dt: number) Update function. Happends before setting all popups, alerts, etc. If `keep = true`, callback can be called without card object if tab is selected but not rendered in current page
 
 --- @class TheFamilyTab: TheFamilyTabOptions
 --- @field group TheFamilyGroup
