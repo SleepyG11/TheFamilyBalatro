@@ -25,8 +25,10 @@
 --- @class TheFamilyTab: TheFamilyTabOptions
 --- @field group TheFamilyGroup
 --- @field is_enabled boolean
---- @field rerender_alert fun() Function to manually rerender alert
+--- @field card? Card Card which represents tab
 --- @field rerender_front_label fun() Function to manually rerender front_label
+--- @field rerender_popup fun() Function to manually rerender popup
+--- @field rerender_alert fun() Function to manually rerender alert
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
 --- @field tabs TheFamilyTab[]

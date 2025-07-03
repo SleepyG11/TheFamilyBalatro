@@ -630,12 +630,25 @@ TheFamily.UI = {
 				end
 				card:update(0)
 			end
+			function definition.rerender_popup()
+				if card.REMOVED then
+					return
+				end
+				if card.children.h_popup then
+					card.config.h_popup = nil
+					card.children.h_popup:remove()
+					card.children.h_popup = nil
+				end
+				card:update(0)
+			end
 
 			local old_remove = card.remove
 			function card:remove(...)
 				old_remove(self, ...)
 				function definition.rerender_alert() end
 				function definition.rerender_front_label() end
+				function definition.rerender_popup() end
+				definition.card = nil
 			end
 
 			card:hard_set_T(nil, nil, card.T.w * TheFamily.UI.scale, card.T.h * TheFamily.UI.scale)
@@ -671,6 +684,7 @@ TheFamily.UI = {
 				})
 			end
 			card.thefamily_definition = definition
+			definition.card = card
 			TheFamily.UI.set_card_update(definition, card)
 		end
 		if card and definition.keep and definition.key and TheFamily.opened_tabs.dictionary[definition.key] then
@@ -858,7 +872,8 @@ TheFamily.own_tabs = {}
 --- @return TheFamilyGroup
 function TheFamily.create_tab_group(config)
 	if TheFamily.tab_groups.dictionary[config.key] then
-		return
+		print(string.format("[TheFamily]: Duplicate group key: %s", config.key))
+		return TheFamily.tab_groups.dictionary[config.key]
 	end
 	local group = {
 		key = config.key,
@@ -879,7 +894,8 @@ end
 --- @return TheFamilyTab
 function TheFamily.create_tab(config)
 	if TheFamily.tabs.dictionary[config.key] then
-		return
+		print(string.format("[TheFamily]: Duplicate tab key: %s", config.key))
+		return TheFamily.tabs.dictionary[config.key]
 	end
 	local tab = {
 		key = config.key,
@@ -910,6 +926,9 @@ function TheFamily.create_tab(config)
 
 		rerender_alert = function() end,
 		rerender_front_label = function() end,
+		rerender_popup = function() end,
+
+		card = nil,
 	}
 	if tab.group_key then
 		local group = TheFamily.tab_groups.dictionary[tab.group_key]
