@@ -1,5 +1,5 @@
 TheFamily = setmetatable({
-	version = "0.1.0c",
+	version = "0.1.0d",
 }, {})
 
 TheFamily.tabs = {
@@ -947,6 +947,7 @@ end
 function TheFamily.init()
 	G.E_MANAGER:add_event(Event({
 		func = function()
+			TheFamily.rendered_tabs.dictionary = {}
 			TheFamily.opened_tabs.dictionary = {}
 			TheFamily.opened_tabs.overlay_key = nil
 
