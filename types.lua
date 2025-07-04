@@ -7,7 +7,7 @@
 --- @field key string Unique key
 --- @field group_key string Unique key of group to be assigned for
 --- @field order? number Value user for sorting, from lowest to highest
---- @field type? "switch"|"overlay" Determines highlight behaviour: only one tab with type `overlay` can be selected at a time; `switch` is independent. (default is `overlay`)
+--- @field type? "switch"|"overlay"|"filler"|"separator" Determines highlight behaviour: only one tab with type `overlay` can be selected at a time; `switch` is independent, `filler` is empty card, `separator` is empty space. (default is `overlay`)
 --- @field keep? boolean Should prevent tab from deselecting when another page is opened
 --- @field front? string Key from G.P_CARDS to set card's front
 --- @field center? string | fun(definition: TheFamilyTab, area: CardArea): Card Key from G.P_CENTERS, or function which return fully created card (`create_card()` or `SMODS.create_card()`, for example). **DO NOT EMPLACE IT!**

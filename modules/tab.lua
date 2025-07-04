@@ -1,12 +1,12 @@
 TheFamilyTab = Object:extend()
 
-local function only_function(a, b)
-	return type(a) == "function" and a or b
-end
-
 function TheFamilyTab:init(params)
-	if TheFamily.tabs.dictionary[params.key] then
+	if params.key and TheFamily.tabs.dictionary[params.key] then
 		print(string.format("[TheFamily]: Duplicate tab key: %s", params.key))
+	end
+
+	local function only_function(a, b)
+		return type(a) == "function" and a or b
 	end
 
 	self.key = params.key
@@ -47,8 +47,10 @@ function TheFamilyTab:init(params)
 		end
 	end
 
-	table.insert(TheFamily.tabs.list, self)
-	TheFamily.tabs.dictionary[self.key] = self
+	if self.key then
+		table.insert(TheFamily.tabs.list, self)
+		TheFamily.tabs.dictionary[self.key] = self
+	end
 end
 
 function TheFamilyTab:enabled()
@@ -67,7 +69,7 @@ function TheFamilyTab:front_label(card) end
 function TheFamilyTab:popup(card) end
 function TheFamilyTab:alert(card) end
 
-function TheFamilyTab:create_card(replace_index)
+function TheFamilyTab:create_card(replace_index, emplace)
 	if not TheFamily.UI.area then
 		return
 	end
@@ -76,22 +78,19 @@ function TheFamilyTab:create_card(replace_index)
 	local card
 
 	TheFamily.__prevent_used_jokers = true
-	if self.separator or self.filler then
+	if self.type == "separator" or self.type == "filler" then
 		card = Card(area.T.x + area.T.w / 2, area.T.y, G.CARD_W, G.CARD_H, nil, G.P_CENTERS.c_base, {
 			bypass_discovery_center = true,
 			bypass_discovery_ui = true,
 			discover = false,
 		})
 		card.no_shadow = true
-		if not self.filler then
+		card.states.collide.can = true
+		if self.type == "separator" then
 			card.states.visible = false
 			card.states.hover.can = false
 		end
-		card.states.collide.can = false
 		card.states.drag.can = false
-		function card:hover()
-			return Node.hover(self)
-		end
 		function card:click() end
 	elseif self.center then
 		if type(self.center) == "string" then
@@ -118,36 +117,35 @@ function TheFamilyTab:create_card(replace_index)
 		end
 		card.no_shadow = true
 		card.states.collide.can = true
+		card.states.visible = true
 		card.states.hover.can = true
 		card.states.drag.can = false
-		card.states.visible = true
 		function card:click()
 			if self.highlighted ~= true then
-				TheFamily.UI.area:add_to_highlighted(self)
+				area:add_to_highlighted(self)
 			else
-				TheFamily.UI.area:remove_from_highlighted(self)
+				area:remove_from_highlighted(self)
 			end
 		end
 	end
 	TheFamily.__prevent_used_jokers = nil
 
-	if self.emplace and area then
+	self.card = card
+	card.thefamily_tab = self
+
+	if emplace and area then
 		area:emplace(card)
 	elseif replace_index and area and (area.cards or {})[replace_index] then
 		local target_index = replace_index
 		local target_card = area.cards[target_index]
 		if target_card.highlighted then
-			area:remove_from_highlighted(target_card, target_card.thefamily_definition.keep)
+			area:remove_from_highlighted(target_card, target_card.thefamily_tab.keep)
 		end
 		target_card:remove()
 		area:emplace(card)
 		table.insert(area.cards, target_index, card)
 		area.cards[#area.cards] = nil
-		TheFamily.UI.set_card_position({
-			card = card,
-			index = target_index,
-			force_position = true,
-		})
+		area:set_card_position(card, target_index, true)
 	end
 
 	self:set_card(card)
@@ -155,13 +153,7 @@ function TheFamilyTab:create_card(replace_index)
 	return card
 end
 function TheFamilyTab:set_card(card)
-	if not self.card then
-		self:remove_card()
-		return
-	end
 	local this = self
-	self.card = card
-	card.thefamily_definition = self
 
 	local old_remove = card.remove
 	function card:remove(...)
@@ -192,14 +184,20 @@ function TheFamilyTab:set_card(card)
 	local old_update = card.update
 	function card:update(dt, ...)
 		old_update(self, dt, ...)
-
 		if self.highlighted and not this:can_highlight(self) then
 			TheFamily.UI.area:remove_from_highlighted(self)
 		end
 
 		this:update(self, dt)
 
-		this:render_popup()
+		local is_highlight_changed = self.old_highlighted ~= self.highlighted
+		self.old_highlighted = self.highlighted
+
+		if is_highlight_changed then
+			this:rerender_popup()
+		else
+			this:render_popup()
+		end
 		this:render_alert()
 		this:render_front_label()
 	end
@@ -229,10 +227,9 @@ function TheFamilyTab:remove_alert()
 end
 function TheFamilyTab:remove_popup()
 	if self.card and not self.card.REMOVED then
-		self.card.config.h_popup = nil
-		if self.card.children.h_popup then
-			self.card.children.h_popup:remove()
-			self.card.children.h_popup = nil
+		if self.card.children.popup then
+			self.card.children.popup:remove()
+			self.card.children.popup = nil
 		end
 	end
 end
@@ -470,7 +467,7 @@ function TheFamilyTab:render_popup()
 			or {
 				align = "cl",
 				offset = { x = -0.25, y = 0 },
-				major = self.card,
+				parent = self.card,
 				xy_bond = "Strong",
 				r_bond = "Weak",
 				wh_bond = "Weak",
