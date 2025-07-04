@@ -3,6 +3,26 @@ version = "1.0.0"
 dump_lua = true
 priority = -1
 
+# Modules
+
+[[patches]]
+[patches.module]
+source = 'modules/group.lua'
+before = 'main.lua'
+name = 'thefamily/group'
+
+[[patches]]
+[patches.module]
+source = 'modules/tab.lua'
+before = 'main.lua'
+name = 'thefamily/tab'
+
+[[patches]]
+[patches.module]
+source = 'modules/cardarea.lua'
+before = 'main.lua'
+name = 'thefamily/cardarea'
+
 # Init
 
 [[patches]]
