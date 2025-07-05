@@ -35,6 +35,6 @@
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
 --- @field add_tab fun(self: TheFamilyTab)
---- @field tabs { list: table<TheFamilyTab>, dictionary: table<string, TheFamilyTab> }
---- @field enabled_tabs { list: table<TheFamilyTab>, dictionary: table<string, TheFamilyTab> }
+--- @field tabs { list: TheFamilyTab[], dictionary: table<string, TheFamilyTab> }
+--- @field enabled_tabs { list: TheFamilyTab[], dictionary: table<string, TheFamilyTab> }
 --- @field is_enabled boolean

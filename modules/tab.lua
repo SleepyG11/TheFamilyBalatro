@@ -90,7 +90,6 @@ function TheFamilyTab:create_card(replace_index, emplace)
 			discover = false,
 		})
 		card.no_shadow = true
-		card.states.collide.can = true
 		if self.type == "separator" then
 			card.states.visible = false
 			card.states.hover.can = false
@@ -121,7 +120,6 @@ function TheFamilyTab:create_card(replace_index, emplace)
 				})
 		end
 		card.no_shadow = true
-		card.states.collide.can = true
 		card.states.visible = true
 		card.states.hover.can = true
 		card.states.drag.can = false
@@ -375,9 +373,12 @@ function TheFamilyTab:render_alert()
 				y = (config.offset or {}).y or (-0.1 * ui_values.scale),
 			},
 			parent = self.card,
+			instance_type = "POPUP",
 		},
 	})
-	box.states.collide.can = false
+	if not config.collideable then
+		box.states.collide.can = false
+	end
 	box.states.hover.can = false
 	box.states.click.can = false
 	box.role.r_bond = "Weak"
@@ -389,7 +390,10 @@ function TheFamilyTab:render_popup()
 	if not self.card or self.card.REMOVED then
 		return
 	end
-	if not (self.card.states.hover.is or (self.card.highlighted and self.keep_popup_when_highlighted)) then
+	if
+		G.SETTINGS.paused
+		or not (self.card.states.hover.is or (self.card.highlighted and self.keep_popup_when_highlighted))
+	then
 		self.card.thefamily_popup_checked = nil
 		self:remove_popup()
 		return
@@ -478,10 +482,14 @@ function TheFamilyTab:render_popup()
 				wh_bond = "Weak",
 			}
 		popup_config.instance_type = "POPUP"
-		self.card.children.popup = UIBox({
+		popup_config.parent = self.card
+
+		local box = UIBox({
 			definition = popup,
 			config = popup_config,
 		})
+
+		self.card.children.popup = box
 	end
 end
 

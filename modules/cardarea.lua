@@ -48,7 +48,7 @@ function TheFamilyCardArea:init(...)
 		config = {
 			align = "tr",
 			major = G.ROOM_ATTACH,
-			bond = "Weak",
+			bond = "Strong",
 			offset = {
 				x = 0,
 				y = 1,
@@ -110,16 +110,20 @@ function TheFamilyCardArea:align_cards()
 	end
 	self.thefamily_is_first_card_selected = self.cards[1].highlighted
 	self.thefamily_is_any_card_hovered = self.states.hover.is
+	self.thefamily_is_any_card_clicked = false
 	if not self.thefamily_is_any_card_hovered then
 		for _, card in ipairs(self.cards) do
 			if card.states.hover.is then
 				self.thefamily_is_any_card_hovered = true
-				break
+			end
+			if card.states.click.is then
+				self.thefamily_is_any_card_clicked = true
 			end
 		end
 	end
 
 	for index, card in ipairs(self.cards) do
+		card.states.collide.can = not G.SETTINGS.paused
 		self:set_card_position(card, index)
 	end
 end
@@ -232,159 +236,6 @@ function TheFamilyCardArea:update(dt)
 	end
 end
 
-function TheFamilyCardArea:create_page_cards()
-	local tabs_to_render = {}
-	local start_index = 1 + TheFamily.UI.tabs_per_page * (TheFamily.UI.page - 1)
-	local end_index = start_index + TheFamily.UI.tabs_per_page
-	local current_index = 1
-	for _, group in ipairs(TheFamily.tab_groups.list) do
-		if current_index >= end_index then
-			break
-		end
-		if group.is_enabled then
-			if #group.enabled_tabs.list + current_index < start_index then
-				current_index = current_index + #group.enabled_tabs.list
-			else
-				for _, tab in ipairs(group.enabled_tabs.list) do
-					if current_index > end_index then
-						break
-					end
-					if current_index >= start_index then
-						table.insert(tabs_to_render, tab)
-					end
-					current_index = current_index + 1
-				end
-			end
-		end
-	end
-
-	EMPTY(self.rendered_tabs.dictionary)
-
-	for i = 1, TheFamily.UI.tabs_per_page do
-		if tabs_to_render[i] then
-			self.rendered_tabs.dictionary[tabs_to_render[i].key] = tabs_to_render[i]
-			tabs_to_render[i]:create_card(i + 2)
-		else
-			TheFamilyTab({
-				type = "filler",
-			}):create_card(i + 2)
-		end
-	end
-end
-function TheFamilyCardArea:create_initial_cards()
-	local this = self
-
-	local function change_page(dx)
-		local old_page = TheFamily.UI.page
-		TheFamily.UI.page = math.max(1, math.min(TheFamily.UI.max_page, TheFamily.UI.page + dx))
-		if TheFamily.UI.page ~= old_page then
-			this:create_page_cards()
-		end
-	end
-
-	TheFamilyTab({
-		center = "j_family",
-		type = "switch",
-		key = "thefamily_core",
-	}):create_card(nil, true)
-	TheFamilyTab({
-		type = "separator",
-	}):create_card(nil, true)
-	for i = 1, TheFamily.UI.tabs_per_page do
-		TheFamilyTab({
-			type = "filler",
-		}):create_card(nil, true)
-	end
-	TheFamilyTab({
-		type = "separator",
-	}):create_card(nil, true)
-	TheFamilyTab({
-		key = "thefamily_next_page",
-		center = "c_base",
-		front_label = function(definition, card)
-			return {
-				text = "Next page",
-			}
-		end,
-		click = function(definition, card)
-			change_page(1)
-			return true
-		end,
-	}):create_card(nil, true)
-	TheFamilyTab({
-		key = "thefamily_prev_page",
-		center = "c_base",
-		front_label = function(definition, card)
-			return {
-				text = "Prev page",
-			}
-		end,
-		click = function(definition, card)
-			change_page(-1)
-			return true
-		end,
-		alert = function(definition, card)
-			local info = TheFamily.UI.get_ui_values()
-			return {
-				definition_function = function()
-					return TheFamily.UI.create_UI_dark_alert(card, {
-						{
-							n = G.UIT.O,
-							config = {
-								object = DynaText({
-									string = {
-										{
-											ref_table = TheFamily.UI,
-											ref_value = "page",
-										},
-									},
-									colours = { G.C.WHITE },
-									shadow = true,
-									silent = true,
-									bump = true,
-									pop_in = 0.2,
-									scale = 0.4 * info.scale,
-								}),
-							},
-						},
-						{
-							n = G.UIT.T,
-							config = {
-								text = "/",
-								colour = G.C.WHITE,
-								scale = 0.4 * info.scale,
-							},
-						},
-						{
-							n = G.UIT.O,
-							config = {
-								object = DynaText({
-									string = {
-										{
-											ref_table = TheFamily.UI,
-											ref_value = "max_page",
-										},
-									},
-									colours = { G.C.WHITE },
-									shadow = true,
-									silent = true,
-									bump = true,
-									pop_in = 0.2,
-									scale = 0.4 * info.scale,
-								}),
-							},
-						},
-					})
-				end,
-			}
-		end,
-	}):create_card(nil, true)
-end
-function TheFamilyCardArea:init_cards()
-	self:create_initial_cards()
-	self:create_page_cards()
-end
-
 function TheFamilyCardArea:_highlight_tab(tab)
 	if tab.card and not tab.card.highlighted then
 		self.highlighted[#self.highlighted + 1] = tab.card
@@ -475,4 +326,239 @@ function TheFamilyCardArea:_close_and_unhighlight(tab)
 		self:_unhighlight_tab(tab)
 		return true
 	end
+end
+
+function TheFamilyCardArea:_scroll(dx)
+	if not self.thefamily_is_any_card_hovered then
+		return
+	end
+	local ui_values = TheFamily.UI.get_ui_values()
+	if ui_values.pagination_type ~= "scroll" then
+		return
+	end
+	-- For now only vertical movement
+	local area_width = #TheFamily.UI.area.cards * ui_values.gap
+	local max_y = 1
+	local min_y = math.min(max_y, -area_width + G.ROOM_ATTACH.T.h + 0.5)
+	local current_y = TheFamily.UI.area_container.config.offset.y
+	local diff_y = (dx > 0 and 0.5) or (dx < 0 and -0.5) or 0
+	local new_y = math.min(max_y, math.max(min_y, current_y + diff_y))
+	TheFamily.UI.area_container.config.offset.y = new_y
+end
+
+function TheFamilyCardArea:_init_core_tabs()
+	if TheFamilyCardArea.core_tabs then
+		return
+	end
+	local function change_page(dx)
+		local old_page = TheFamily.UI.page
+		TheFamily.UI.page = math.max(1, math.min(TheFamily.UI.max_page, TheFamily.UI.page + dx))
+		if TheFamily.UI.page ~= old_page then
+			TheFamily.UI.area:create_page_cards()
+		end
+	end
+	TheFamilyCardArea.core_tabs = {
+		mod_toggle = TheFamilyTab({
+			center = "j_family",
+			type = "switch",
+			key = "thefamily_core",
+
+			alert = function(self, card)
+				if not card.highlighted then
+					return nil
+				end
+				local ui_values = TheFamily.UI.get_ui_values()
+				return {
+					definition_function = function()
+						local result = TheFamily.UI.create_UI_dark_alert(card, {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Config",
+									colour = G.C.WHITE,
+									scale = 0.45 * ui_values.scale,
+								},
+							},
+						})
+						result.definition.config.button = "thefamily_open_options"
+						result.definition.config.button_dist = 0.2
+						result.config.collideable = true
+						return result
+					end,
+				}
+			end,
+		}),
+		prev_page = TheFamilyTab({
+			key = "thefamily_next_page",
+			center = "c_base",
+			front_label = function(definition, card)
+				return {
+					text = "Next page",
+				}
+			end,
+			click = function(definition, card)
+				change_page(1)
+				return true
+			end,
+		}),
+		next_page = TheFamilyTab({
+			key = "thefamily_prev_page",
+			center = "c_base",
+			front_label = function(definition, card)
+				return {
+					text = "Prev page",
+				}
+			end,
+			click = function(definition, card)
+				change_page(-1)
+				return true
+			end,
+			alert = function(definition, card)
+				local info = TheFamily.UI.get_ui_values()
+				return {
+					definition_function = function()
+						return TheFamily.UI.create_UI_dark_alert(card, {
+							{
+								n = G.UIT.O,
+								config = {
+									object = DynaText({
+										string = {
+											{
+												ref_table = TheFamily.UI,
+												ref_value = "page",
+											},
+										},
+										colours = { G.C.WHITE },
+										shadow = true,
+										silent = true,
+										bump = true,
+										pop_in = 0.2,
+										scale = 0.4 * info.scale,
+									}),
+								},
+							},
+							{
+								n = G.UIT.T,
+								config = {
+									text = "/",
+									colour = G.C.WHITE,
+									scale = 0.4 * info.scale,
+								},
+							},
+							{
+								n = G.UIT.O,
+								config = {
+									object = DynaText({
+										string = {
+											{
+												ref_table = TheFamily.UI,
+												ref_value = "max_page",
+											},
+										},
+										colours = { G.C.WHITE },
+										shadow = true,
+										silent = true,
+										bump = true,
+										pop_in = 0.2,
+										scale = 0.4 * info.scale,
+									}),
+								},
+							},
+						})
+					end,
+				}
+			end,
+		}),
+	}
+end
+
+function TheFamilyCardArea:create_page_cards()
+	local tabs_to_render = {}
+	local ui_values = TheFamily.UI.get_ui_values()
+	if ui_values.pagination_type == "page" then
+		local start_index = 1 + TheFamily.UI.tabs_per_page * (TheFamily.UI.page - 1)
+		local end_index = start_index + TheFamily.UI.tabs_per_page
+		local current_index = 1
+		for _, group in ipairs(TheFamily.tab_groups.list) do
+			if current_index >= end_index then
+				break
+			end
+			if group.is_enabled then
+				if #group.enabled_tabs.list + current_index < start_index then
+					current_index = current_index + #group.enabled_tabs.list
+				else
+					for _, tab in ipairs(group.enabled_tabs.list) do
+						if current_index > end_index then
+							break
+						end
+						if current_index >= start_index then
+							table.insert(tabs_to_render, tab)
+						end
+						current_index = current_index + 1
+					end
+				end
+			end
+		end
+
+		EMPTY(self.rendered_tabs.dictionary)
+
+		for i = 1, TheFamily.UI.tabs_per_page do
+			if tabs_to_render[i] then
+				self.rendered_tabs.dictionary[tabs_to_render[i].key] = tabs_to_render[i]
+				tabs_to_render[i]:create_card(i + 2)
+			else
+				TheFamilyTab({
+					type = "filler",
+				}):create_card(i + 2)
+			end
+		end
+	elseif ui_values.pagination_type == "scroll" then
+		for _, group in ipairs(TheFamily.tab_groups.list) do
+			if group.is_enabled then
+				for _, tab in ipairs(group.enabled_tabs.list) do
+					table.insert(tabs_to_render, tab)
+				end
+			end
+		end
+		for i = 1, #tabs_to_render do
+			self.rendered_tabs.dictionary[tabs_to_render[i].key] = tabs_to_render[i]
+			tabs_to_render[i]:create_card(i + 2)
+		end
+	end
+end
+function TheFamilyCardArea:create_initial_cards()
+	self:_init_core_tabs()
+	TheFamilyCardArea.core_tabs.mod_toggle:create_card(nil, true)
+	TheFamilyTab({
+		type = "separator",
+	}):create_card(nil, true)
+	local ui_values = TheFamily.UI.get_ui_values()
+	if ui_values.pagination_type == "page" then
+		for i = 1, TheFamily.UI.tabs_per_page do
+			TheFamilyTab({
+				type = "filler",
+			}):create_card(nil, true)
+		end
+		TheFamilyTab({
+			type = "separator",
+		}):create_card(nil, true)
+		TheFamilyCardArea.core_tabs.prev_page:create_card(nil, true)
+		TheFamilyCardArea.core_tabs.next_page:create_card(nil, true)
+	elseif ui_values.pagination_type == "scroll" then
+		local items_to_render = 0
+		for _, group in ipairs(TheFamily.tab_groups.list) do
+			if group.is_enabled then
+				items_to_render = items_to_render + #group.enabled_tabs.list
+			end
+		end
+		for i = 1, items_to_render do
+			TheFamilyTab({
+				type = "filler",
+			}):create_card(nil, true)
+		end
+	end
+end
+function TheFamilyCardArea:init_cards()
+	self:create_initial_cards()
+	self:create_page_cards()
 end

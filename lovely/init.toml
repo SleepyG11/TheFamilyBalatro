@@ -5,6 +5,38 @@ priority = -1
 
 # Modules
 
+# UI
+[[patches]]
+[patches.module]
+source = 'modules/ui/config_tabs.lua'
+before = 'main.lua'
+name = 'thefamily/ui/config_tabs'
+
+[[patches]]
+[patches.module]
+source = 'modules/ui/functions.lua'
+before = 'main.lua'
+name = 'thefamily/ui/functions'
+
+[[patches]]
+[patches.module]
+source = 'modules/ui/parts.lua'
+before = 'main.lua'
+name = 'thefamily/ui/parts'
+
+
+[[patches]]
+[patches.module]
+source = 'modules/ui/config.lua'
+before = 'main.lua'
+name = 'thefamily/ui/config'
+
+[[patches]]
+[patches.module]
+source = 'modules/ui/index.lua'
+before = 'main.lua'
+name = 'thefamily/ui'
+
 [[patches]]
 [patches.module]
 source = 'modules/group.lua'
@@ -22,6 +54,18 @@ name = 'thefamily/tab'
 source = 'modules/cardarea.lua'
 before = 'main.lua'
 name = 'thefamily/cardarea'
+
+[[patches]]
+[patches.module]
+source = 'modules/config.lua'
+before = 'main.lua'
+name = 'thefamily/config'
+
+[[patches]]
+[patches.module]
+source = 'modules/utils.lua'
+before = 'main.lua'
+name = 'thefamily/utils'
 
 [[patches]]
 [patches.module]

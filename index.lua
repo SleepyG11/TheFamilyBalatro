@@ -2,6 +2,9 @@ TheFamily = setmetatable({
 	version = "0.1.1-dev",
 }, {})
 
+require("thefamily/utils")
+require("thefamily/config")
+require("thefamily/ui")
 require("thefamily/group")
 require("thefamily/tab")
 require("thefamily/cardarea")
@@ -10,7 +13,9 @@ require("thefamily/test")
 ------------------------------
 
 TheFamily.tabs = {
+	--- @type table<string, TheFamilyTab>
 	dictionary = {},
+	--- @type TheFamilyTab[]
 	list = {},
 }
 function TheFamily.toggle_and_sort_tabs()
@@ -27,7 +32,9 @@ function TheFamily.toggle_and_sort_tabs()
 end
 
 TheFamily.tab_groups = {
+	--- @type table<string, TheFamilyGroup>
 	dictionary = {},
+	--- @type TheFamilyGroup[]
 	list = {},
 }
 function TheFamily.toggle_and_sort_tab_groups()
@@ -61,54 +68,6 @@ end
 
 TheFamily.own_tabs = {}
 
-------------------------------
-
-TheFamily.UI = {
-	r = -70,
-	gap = 0.53,
-	scale = 0.4,
-
-	get_ui_values = function()
-		return {
-			r_deg = TheFamily.UI.r,
-			r_rad = math.rad(TheFamily.UI.r),
-			gap = TheFamily.UI.gap,
-			scale = TheFamily.UI.scale,
-		}
-	end,
-
-	page = 1,
-	items_per_page = 20,
-	utility_cards_per_page = 5,
-	tabs_per_page = 15,
-
-	area = nil,
-	area_container = nil,
-
-	create_UI_dark_alert = function(card, content)
-		local info = TheFamily.UI.get_ui_values()
-		return {
-			definition = {
-				n = G.UIT.R,
-				config = {
-					align = "cm",
-					padding = 0.1 * info.scale,
-					r = 0.02 * info.scale,
-					colour = HEX("22222288"),
-				},
-				nodes = content,
-			},
-			config = {
-				align = "tri",
-				offset = {
-					x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
-					y = 0.15 * info.scale,
-				},
-			},
-		}
-	end,
-}
-
 --- @param config TheFamilyGroupOptions
 --- @return TheFamilyGroup
 function TheFamily.create_tab_group(config)
@@ -118,6 +77,10 @@ end
 --- @return TheFamilyTab
 function TheFamily.create_tab(config)
 	return TheFamilyTab(config)
+end
+
+function TheFamily.emplace_steamodded()
+	TheFamily.current_mod = SMODS.current_mod
 end
 
 function TheFamily.init()
@@ -131,6 +94,16 @@ function TheFamily.init()
 	TheFamily.own_tabs.time_tracker.this_run_start = G.TIMERS.UPTIME or 0
 
 	TheFamilyCardArea():init_cards()
+end
+
+------------------------------
+
+local wheel_moved_ref = love.wheelmoved or function() end
+function love.wheelmoved(x, y)
+	wheel_moved_ref(x, y)
+	if TheFamily.UI.area then
+		TheFamily.UI.area:_scroll(y)
+	end
 end
 
 ------------------------------
@@ -355,3 +328,5 @@ TheFamily.create_tab({
 
 	keep_popup_when_highlighted = true,
 })
+
+------------------------------
