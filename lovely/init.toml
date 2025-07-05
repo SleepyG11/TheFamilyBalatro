@@ -23,6 +23,12 @@ source = 'modules/cardarea.lua'
 before = 'main.lua'
 name = 'thefamily/cardarea'
 
+[[patches]]
+[patches.module]
+source = 'modules/test.lua'
+before = 'main.lua'
+name = 'thefamily/test'
+
 # Init
 
 [[patches]]

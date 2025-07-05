@@ -5,6 +5,7 @@ TheFamily = setmetatable({
 require("thefamily/group")
 require("thefamily/tab")
 require("thefamily/cardarea")
+require("thefamily/test")
 
 ------------------------------
 

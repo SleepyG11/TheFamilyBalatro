@@ -138,19 +138,12 @@ function TheFamilyTab:create_card(replace_index, emplace)
 	self.card = card
 	card.thefamily_tab = self
 
-	if emplace and area then
-		area:emplace(card)
-	elseif replace_index and area and (area.cards or {})[replace_index] then
-		local target_index = replace_index
-		local target_card = area.cards[target_index]
-		if target_card.highlighted then
-			area:remove_from_highlighted(target_card, target_card.thefamily_tab.keep)
+	if area then
+		if emplace then
+			area:emplace(card)
+		elseif replace_index then
+			area:replace(card, replace_index)
 		end
-		target_card:remove()
-		area:emplace(card)
-		table.insert(area.cards, target_index, card)
-		area.cards[#area.cards] = nil
-		area:set_card_position(card, target_index, true)
 	end
 
 	self:set_card(card)
@@ -160,9 +153,20 @@ end
 function TheFamilyTab:set_card(card)
 	local this = self
 
-	local old_remove = card.remove
-	function card:remove(...)
-		old_remove(self, ...)
+	function card:remove()
+		self.removed = true
+		if self.area then
+			self.area:remove_card(self)
+		end
+		remove_all(self.children)
+
+		for k, v in pairs(G.I.CARD) do
+			if v == self then
+				table.remove(G.I.CARD, k)
+			end
+		end
+		Moveable.remove(self)
+
 		this:remove_card()
 	end
 
@@ -181,26 +185,15 @@ function TheFamilyTab:set_card(card)
 
 	local old_click = card.click
 	function card:click()
-		if not this:click(self) then
-			old_click(self)
+		if this:click(self) then
+			return
 		end
+		old_click(self)
 	end
 
 	local old_update = card.update
 	function card:update(dt, ...)
 		old_update(self, dt, ...)
-
-		if not this:can_highlight(self) then
-			if self.highlighted then
-				TheFamily.UI.area:remove_from_highlighted(self)
-			end
-		else
-			if not self.highlighted and this.type == "switch" and this:force_highlight(self) then
-				TheFamily.UI.area:add_to_highlighted(self)
-			end
-		end
-
-		this:update(self, dt)
 
 		local is_highlight_changed = self.old_highlighted ~= self.highlighted
 		self.old_highlighted = self.highlighted
@@ -506,53 +499,26 @@ function TheFamilyTab:rerender_popup()
 	self:render_popup()
 end
 
--- TODO: move this shit into card area
+function TheFamilyTab:_can_highlight()
+	return TheFamily.UI.area and (self.keep or self.card) and self:can_highlight(self.card)
+end
+function TheFamilyTab:_can_force_highlight()
+	return TheFamily.UI.area and self.type == "switch" and self:_can_highlight() and self:force_highlight(self.card)
+end
+function TheFamilyTab:_can_unhighlight()
+	if not TheFamily.UI.area or self:_can_force_highlight() then
+		return false
+	end
+	return true
+end
+
 function TheFamilyTab:open()
-	local area = TheFamily.UI.area
-	if not area then
-		return
-	end
-
-	if area.opened_tabs.dictionary[self.key] then
-		return
-	end
-
-	if area.rendered_tabs.dictionary[self.key] then
-		area:add_to_highlighted(self.card)
-	else
-		if self.keep and self:can_highlight(nil) then
-			if self.type == "overlay" then
-				area:unhighlight_overlay_tab()
-			end
-			self:highlight(nil)
-			area.opened_tabs.dictionary[self.key] = true
-			if self.type == "overlay" then
-				area.opened_tabs.overlay_key = self.key
-			end
-		end
+	if TheFamily.UI.area then
+		TheFamily.UI.area:_open_and_highlight(self)
 	end
 end
--- TODO: move this shit into card area
 function TheFamilyTab:close()
-	local area = TheFamily.UI.area
-	if not area then
-		return
-	end
-
-	if not area.opened_tabs.dictionary[self.key] then
-		return
-	end
-	if self.type == "switch" and self:can_highlight(self.card) and self:force_highlight(self.card) then
-		return
-	end
-
-	if area.rendered_tabs.dictionary[self.key] then
-		area:remove_from_highlighted(self.card)
-	else
-		self:unhighlight(nil)
-		area.opened_tabs.dictionary[self.key] = nil
-		if area.opened_tabs.overlay_key == self.key then
-			area.opened_tabs.overlay_key = nil
-		end
+	if TheFamily.UI.area then
+		TheFamily.UI.area:_close_and_unhighlight(self)
 	end
 end
