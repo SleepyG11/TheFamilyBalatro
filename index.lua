@@ -39,18 +39,20 @@ function TheFamily.toggle_and_sort_tab_groups()
 		else
 			group.is_enabled = true
 		end
-		table.sort(group.tabs, function(a, b)
+		table.sort(group.tabs.list, function(a, b)
 			return not a.order or not b.order or a.order < b.order
 		end)
-		group.enabled_tabs = {}
+		EMPTY(group.enabled_tabs.list)
+		EMPTY(group.enabled_tabs.dictionary)
 		if group.is_enabled then
-			for _, tab in ipairs(group.tabs) do
+			for _, tab in ipairs(group.tabs.list) do
 				if tab.is_enabled then
-					table.insert(group.enabled_tabs, tab)
+					table.insert(group.enabled_tabs.list, tab)
+					group.enabled_tabs.dictionary[tab.key] = tab
 				end
 			end
 		end
-		table.sort(group.enabled_tabs, function(a, b)
+		table.sort(group.enabled_tabs.list, function(a, b)
 			return not a.order or not b.order or a.order < b.order
 		end)
 	end
@@ -179,7 +181,7 @@ TheFamily.own_tabs.time_tracker = {
 		self.real_time_label = os.date("%I:%M:%S %p", os.time())
 		self.session_label = self.format_time(G.TIMERS.UPTIME or 0, false, true)
 		self.acceleration_label = string.format("x%.2f", G.SPEEDFACTOR or 0)
-		self.this_run_label = self.format_time((G.TIMERS.UPTIME or 0) - self.this_run_start, false, true)
+		self.this_run_label = self.format_time((G.TIMERS.UPTIME or 0) - self.this_run_start, true, true)
 		if G.STATE == G.STATES.HAND_PLAYED then
 			if self.current_hand_start == 0 then
 				self.current_hand_start = love.timer.getTime()
@@ -327,15 +329,13 @@ TheFamily.own_tabs.time_tracker = {
 TheFamily.create_tab_group({
 	key = "thefamily_default",
 	order = 0,
-	enabled = function()
-		return false
-	end,
 })
 TheFamily.create_tab({
 	key = "thefamily_time",
 	order = 0,
 	group_key = "thefamily_default",
 	center = "v_hieroglyph",
+	type = "switch",
 
 	front_label = function()
 		return {

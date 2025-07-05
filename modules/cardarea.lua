@@ -10,13 +10,14 @@ function TheFamilyCardArea:init(...)
 	self.states.hover.can = true
 
 	self.opened_tabs = {
-		list = {},
+		--- @type table<string, boolean>
 		dictionary = {},
 
+		--- @type string | nil
 		overlay_key = nil,
 	}
 	self.rendered_tabs = {
-		list = {},
+		--- @type table<string, boolean>
 		dictionary = {},
 	}
 
@@ -118,13 +119,13 @@ function TheFamilyCardArea:set_ranks()
 end
 function TheFamilyCardArea:emplace(card)
 	CardArea.emplace(self, card)
-	if
-		card
-		and card.thefamily_tab
-		and card.thefamily_tab.key
-		and self.opened_tabs.dictionary[card.thefamily_tab.key]
-	then
-		self:add_to_highlighted(card, true)
+	if card and card.thefamily_tab and card.thefamily_tab.key then
+		local tab = card.thefamily_tab
+		if self.opened_tabs.dictionary[tab.key] then
+			self:add_to_highlighted(card, true)
+		elseif tab.type == "switch" and tab:can_highlight(card) and tab:force_highlight(card) then
+			self:add_to_highlighted(card, true)
+		end
 	end
 end
 
@@ -132,7 +133,10 @@ function TheFamilyCardArea:remove_from_highlighted(card, silent)
 	if not self.cards or not self.cards[1] then
 		return
 	end
-	-- TODO: check for force highlight
+	local tab = card.thefamily_tab
+	if not silent and tab.type == "switch" and tab:can_highlight(card) and tab:force_highlight(card) then
+		return
+	end
 	self:unhighlight_tab(card, silent)
 	if not silent then
 		play_sound("cardSlide2", nil, 0.3)
@@ -184,7 +188,8 @@ function TheFamilyCardArea:add_to_highlighted(card, silent)
 	if not self.cards or not self.cards[1] then
 		return
 	end
-	if not silent and not card.thefamily_tab:can_highlight(card) then
+	local tab = card.thefamily_tab
+	if not silent and not tab:can_highlight(card) then
 		return
 	end
 	self:highlight_tab(card, silent)
@@ -234,15 +239,22 @@ function TheFamilyCardArea:draw()
 end
 function TheFamilyCardArea:update(dt)
 	local tabs_to_remove = {}
-	for key, _ in pairs(self.opened_tabs.dictionary) do
-		if not self.rendered_tabs.dictionary[key] then
-			local tab = TheFamily.tabs.dictionary[key]
+	local tabs_to_add = {}
+	for key, tab in pairs(TheFamily.tabs.dictionary) do
+		if tab.enabled and not self.rendered_tabs.dictionary[key] then
+			local is_opened = self.opened_tabs.dictionary[key]
 			if not tab:can_highlight(nil) then
-				tab:unhighlight(nil)
-				table.insert(tabs_to_remove, tab.key)
+				if is_opened then
+					tab:unhighlight(nil)
+					table.insert(tabs_to_remove, tab.key)
+				end
 			else
-				tab:update(nil, dt)
+				if not is_opened and tab.keep and tab.type == "switch" and tab:force_highlight(nil) then
+					tab:highlight(nil)
+					table.insert(tabs_to_add, tab.key)
+				end
 			end
+			tab:update(nil, dt)
 		end
 	end
 	for _, key in ipairs(tabs_to_remove) do
@@ -250,6 +262,9 @@ function TheFamilyCardArea:update(dt)
 		if self.opened_tabs.overlay_key == key then
 			self.opened_tabs.overlay_key = nil
 		end
+	end
+	for _, key in ipairs(tabs_to_add) do
+		self.opened_tabs.dictionary[key] = true
 	end
 end
 
@@ -263,10 +278,10 @@ function TheFamilyCardArea:create_page_cards()
 			break
 		end
 		if group.is_enabled then
-			if #group.enabled_tabs + current_index < start_index then
-				current_index = current_index + #group.enabled_tabs
+			if #group.enabled_tabs.list + current_index < start_index then
+				current_index = current_index + #group.enabled_tabs.list
 			else
-				for _, tab in ipairs(group.enabled_tabs) do
+				for _, tab in ipairs(group.enabled_tabs.list) do
 					if current_index > end_index then
 						break
 					end

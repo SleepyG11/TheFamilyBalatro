@@ -1,5 +1,6 @@
 TheFamilyGroup = Object:extend()
 
+--- @param params TheFamilyGroupOptions
 function TheFamilyGroup:init(params)
 	if TheFamily.tab_groups.dictionary[params.key] then
 		print(string.format("[TheFamily]: Duplicate group key: %s", params.key))
@@ -15,13 +16,24 @@ function TheFamilyGroup:init(params)
 	self.enabled = only_function(params.enabled, self.enabled)
 	self.is_enabled = false
 
-	self.tabs = {}
-	self.enabled_tabs = {}
+	self.tabs = {
+		list = {},
+		dictionary = {},
+	}
+	self.enabled_tabs = {
+		list = {},
+		dictionary = {},
+	}
 
 	if self.key then
 		table.insert(TheFamily.tab_groups.list, self)
 		TheFamily.tab_groups.dictionary[self.key] = self
 	end
+end
+
+function TheFamilyGroup:add_tab(tab)
+	table.insert(self.tabs.list, tab)
+	self.tabs.dictionary[tab.key] = tab
 end
 
 function TheFamilyGroup:enabled()
