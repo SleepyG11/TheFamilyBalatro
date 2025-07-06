@@ -1,0 +1,40 @@
+--- @class TheFamilyGroupOptions: table
+--- @field key string Unique key
+--- @field order? number Value user for sorting, from lowest to highest
+--- @field enabled? fun(self: TheFamilyGroup): boolean Function which determines can tabs inside this group be created
+
+--- @class TheFamilyTabOptions: table
+--- @field key string Unique key
+--- @field group_key string Unique key of group to be assigned for
+--- @field order? number Value user for sorting, from lowest to highest
+--- @field type? "switch"|"overlay"|"filler"|"separator" Determines highlight behaviour: only one tab with type `overlay` can be selected at a time; `switch` is independent, `filler` is empty card, `separator` is empty space. (default is `overlay`)
+--- @field keep? boolean Should prevent tab from deselecting when another page is opened
+--- @field front? string Key from G.P_CARDS to set card's front
+--- @field center? string | fun(self: TheFamilyTab, area: CardArea): Card Key from G.P_CENTERS, or function which return fully created card (`create_card()` or `SMODS.create_card()`, for example). **DO NOT EMPLACE IT!**
+--- @field front_label? fun(self: TheFamilyTab, card: Card): { text?: string, colour?: table, scale?: number } | { remove: true } | nil Function which returns: config for displaying text on a card, or table with `remove = true` for cleaning up
+--- @field popup? fun(self: TheFamilyTab, card: Card): { name?: table, description?: table[] } | { definition_function: fun(): { definition: table, config: table } } | { remove: true } | nil Function which returns config for displaying popup on hover, or function which returns custom definition for it, or table with `remove = true` for cleaning up. Rerenders when tab is (de)selected, use `card.highlighted` to determine is tab selected
+--- @field keep_popup_when_highlighted? boolean When set to `true` and card is highlighted, popup will stay even if card will be not hovered
+--- @field alert? fun(self: TheFamilyTab, card: Card): table | { definition_function: fun(): { definition: table, config: table } } | { remove: true } | nil Function which returns: config for vanilla `create_UIBox_card_alert()` function, or function which returns custom definition for it, or table with `remove = true` for cleaning up
+--- @field can_highlight? fun(self: TheFamilyTab, card?: Card): boolean Function which controls can card be highlighted. When value will change to `false`, card will automatically unhighlight. If `keep = true`, callback can be called without card object if tab is selected but not rendered in current page
+--- @field force_highlight? fun(self: TheFamilyTab, card?: Card): boolean Function which controls should card be highlighted. Controlled by `can_highlight()`. Only works for `type = switch` When value will change to `true`, card will automatically highlight. Callback can be called without card object if tab is selected but not rendered in current page
+--- @field highlight? fun(self: TheFamilyTab, card?: Card) Callback when card is highlighted. Can be called without card object when it needs to be selected but not rendered in current page
+--- @field unhighlight? fun(self: TheFamilyTab, card?: Card) Callback when card is unhighlighted. Can be called without card object when it needs to be deselected but not rendered in current page
+--- @field click? fun(self: TheFamilyTab, card: Card): boolean Callback when card is clicked. If callback returns `true`, other events will not be fired (ex. card highlight)
+--- @field update? fun(self: TheFamilyTab, card?: Card, dt: number) Update function. `dt` affected by game speed. Called for every enabled tab. Happends before setting all popups, alerts, etc. Callback can be called without card object
+--- @field enabled? fun(self: TheFamilyTab): boolean Function which determines can this tab be created
+
+--- @class TheFamilyTab: TheFamilyTabOptions
+--- @field group? TheFamilyGroup
+--- @field is_enabled boolean
+--- @field card? Card Card which represents tab
+--- @field rerender_front_label fun() Function to manually rerender front_label
+--- @field rerender_popup fun() Function to manually rerender popup
+--- @field rerender_alert fun() Function to manually rerender alert
+--- @field open fun() Manually open tab. All checks applied
+--- @field close fun() Manually close tab. All checks applied
+
+--- @class TheFamilyGroup: TheFamilyGroupOptions
+--- @field add_tab fun(self: TheFamilyTab)
+--- @field tabs { list: TheFamilyTab[], dictionary: table<string, TheFamilyTab> }
+--- @field enabled_tabs { list: TheFamilyTab[], dictionary: table<string, TheFamilyTab> }
+--- @field is_enabled boolean
