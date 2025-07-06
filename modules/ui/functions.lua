@@ -1,7 +1,9 @@
 function G.FUNCS.thefamily_empty() end
 
 function G.FUNCS.thefamily_open_options(e)
-	G.SETTINGS.paused = true
+	-- Because there's so much problems when area is created on pause,
+	-- let's just don't pause a game! Crazy, isn't it?
+	G.SETTINGS.paused = false
 	TheFamily.UI.reset_config_variables()
 	TheFamily.UI.config_opened = true
 	G.FUNCS.overlay_menu({
@@ -17,10 +19,6 @@ local exit_overlay_ref = G.FUNCS.exit_overlay_menu
 function G.FUNCS.exit_overlay_menu(...)
 	TheFamily.UI.reset_config_variables()
 	local result = exit_overlay_ref(...)
-	if TheFamily.UI.request_area_rerender then
-		TheFamily.UI.request_area_rerender = nil
-		TheFamilyCardArea():init_cards()
-	end
 	-- TheFamily.utils.cleanup_dead_elements(G, "MOVEABLES")
 	return result
 end
@@ -28,5 +26,5 @@ end
 function G.FUNCS.thefamily_change_pagination_type(arg)
 	TheFamily.cc.pagination_type = arg.to_key
 	TheFamily.config.save()
-	TheFamily.UI.request_area_rerender = true
+	TheFamily.rerender_area()
 end

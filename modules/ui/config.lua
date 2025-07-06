@@ -33,6 +33,7 @@ if SMODS then
 		if G.ACTIVE_MOD_UI and G.ACTIVE_MOD_UI == TheFamily.current_mod then
 			TheFamily.UI.reset_config_variables()
 			TheFamily.UI.config_opened = true
+			G.SETTINGS.paused = false
 			return G.UIDEF.thefamily_options(true)
 		end
 		return create_UIBox_mods_ref(...)
@@ -41,6 +42,7 @@ if SMODS then
 	local mods_button_ref = G.FUNCS.mods_button
 	function G.FUNCS.mods_button(...)
 		TheFamily.UI.reset_config_variables()
+		G.SETTINGS.paused = true
 		return mods_button_ref(...)
 	end
 end

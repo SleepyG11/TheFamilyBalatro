@@ -10,7 +10,7 @@
 
 TheFamilyCardArea = CardArea:extend()
 
-function TheFamilyCardArea:init(...)
+function TheFamilyCardArea:init()
 	CardArea.init(self, 0, 0, G.CARD_W * 0.5, G.CARD_H * 0.5, {
 		card_limit = 25,
 		type = "thefamily_tabs",
@@ -100,7 +100,7 @@ function TheFamilyCardArea:set_card_position(card, index, force_position)
 	card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad)) + ui_values.gap * index
 	card.T.r = ui_values.r_rad
 	if force_position then
-		-- TODO: force correct rotation
+		-- TODO: force correct rotation SOMEHOW GODDAMNIT
 		card:hard_set_T()
 	end
 end
@@ -172,7 +172,7 @@ function TheFamilyCardArea:remove_card(card)
 		return
 	end
 	local tab = card.thefamily_tab
-	if tab and not tab.keep then
+	if tab and not tab.keep and not self.thefamily_self_remove then
 		self:_close(tab)
 	end
 	for i = #self.highlighted, 1, -1 do
@@ -472,6 +472,17 @@ function TheFamilyCardArea:_init_core_tabs()
 	}
 end
 
+function TheFamilyCardArea:_save_rerender_data()
+	return {
+		opened_tabs = self.opened_tabs,
+	}
+end
+function TheFamilyCardArea:safe_remove()
+	self.thefamily_self_remove = true
+	self:remove()
+	self.thefamily_self_remove = nil
+end
+
 function TheFamilyCardArea:create_page_cards()
 	local tabs_to_render = {}
 	local ui_values = TheFamily.UI.get_ui_values()
@@ -558,7 +569,12 @@ function TheFamilyCardArea:create_initial_cards()
 		end
 	end
 end
-function TheFamilyCardArea:init_cards()
+function TheFamilyCardArea:init_cards(rerender_data)
+	if rerender_data then
+		self.opened_tabs = rerender_data.opened_tabs or self.opened_tabs
+	end
+	self.thefamily_rerender = not not rerender_data
 	self:create_initial_cards()
 	self:create_page_cards()
+	self.thefamily_rerender = nil
 end

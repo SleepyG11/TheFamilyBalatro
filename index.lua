@@ -18,6 +18,18 @@ TheFamily.tabs = {
 	--- @type TheFamilyTab[]
 	list = {},
 }
+TheFamily.tab_groups = {
+	--- @type table<string, TheFamilyGroup>
+	dictionary = {},
+	--- @type TheFamilyGroup[]
+	list = {},
+}
+TheFamily.enabled_tabs = {
+	--- @type table<string, TheFamilyGroup>
+	dictionary = {},
+	--- @type TheFamilyGroup[]
+	list = {},
+}
 function TheFamily.toggle_and_sort_tabs()
 	for _, tab in ipairs(TheFamily.tabs.list) do
 		if not tab:enabled() then
@@ -30,13 +42,6 @@ function TheFamily.toggle_and_sort_tabs()
 		return not a.order or not b.order or a.order < b.order
 	end)
 end
-
-TheFamily.tab_groups = {
-	--- @type table<string, TheFamilyGroup>
-	dictionary = {},
-	--- @type TheFamilyGroup[]
-	list = {},
-}
 function TheFamily.toggle_and_sort_tab_groups()
 	table.sort(TheFamily.tab_groups.list, function(a, b)
 		return not a.order or not b.order or a.order < b.order
@@ -65,6 +70,20 @@ function TheFamily.toggle_and_sort_tab_groups()
 		end)
 	end
 end
+function TheFamily.toggle_and_sort_enabled_tabs()
+	EMPTY(TheFamily.enabled_tabs.list)
+	EMPTY(TheFamily.enabled_tabs.dictionary)
+	for _, group in ipairs(TheFamily.tab_groups.list) do
+		if group.is_enabled then
+			for _, tab in ipairs(group.tabs.list) do
+				if tab.is_enabled then
+					table.insert(TheFamily.enabled_tabs.list, tab)
+					TheFamily.enabled_tabs.dictionary[tab.key] = tab
+				end
+			end
+		end
+	end
+end
 
 TheFamily.own_tabs = {}
 
@@ -86,14 +105,30 @@ end
 function TheFamily.init()
 	TheFamily.toggle_and_sort_tabs()
 	TheFamily.toggle_and_sort_tab_groups()
+	TheFamily.toggle_and_sort_enabled_tabs()
 
+	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / TheFamily.UI.tabs_per_page)
 	TheFamily.UI.page = 1
-	TheFamily.UI.max_page = math.ceil(#TheFamily.tabs.list / TheFamily.UI.tabs_per_page)
 
 	TheFamily.own_tabs.time_tracker.last_hand = 0
 	TheFamily.own_tabs.time_tracker.this_run_start = G.TIMERS.UPTIME or 0
 
 	TheFamilyCardArea():init_cards()
+end
+function TheFamily.rerender_area()
+	if not TheFamily.UI.area or G.SETTINGS.paused then
+		return
+	end
+	TheFamily.toggle_and_sort_tabs()
+	TheFamily.toggle_and_sort_tab_groups()
+	TheFamily.toggle_and_sort_enabled_tabs()
+
+	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / TheFamily.UI.tabs_per_page)
+	TheFamily.UI.page = math.min(TheFamily.UI.max_page, TheFamily.UI.page)
+
+	local rerender_data = TheFamily.UI.area:_save_rerender_data()
+	TheFamily.UI.area:safe_remove()
+	TheFamilyCardArea():init_cards(rerender_data)
 end
 
 ------------------------------
