@@ -100,6 +100,14 @@ end
 
 function TheFamily.emplace_steamodded()
 	TheFamily.current_mod = SMODS.current_mod
+	TheFamily.current_mod.config_tab = function()
+		return TheFamily.UI.get_options_tabs()[1].tab_definition_function
+	end
+	TheFamily.current_mod.extra_tabs = function()
+		local result = TheFamily.UI.get_options_tabs()
+		table.remove(result, 1)
+		return result
+	end
 end
 
 function TheFamily.init()
