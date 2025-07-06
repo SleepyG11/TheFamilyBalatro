@@ -19,15 +19,21 @@ TheFamily.UI = {
 		-- "top",
 		-- "bottom",
 	},
+	scalings = {
+		1,
+		1.1,
+		1.2,
+	},
 
 	get_ui_values = function()
 		return {
 			r_deg = TheFamily.UI.r,
 			r_rad = math.rad(TheFamily.UI.r),
-			gap = TheFamily.UI.gap,
-			scale = TheFamily.UI.scale,
+			gap = TheFamily.UI.gap * (TheFamily.UI.scalings[TheFamily.cc.scaling] or 1),
+			scale = TheFamily.UI.scale * (TheFamily.UI.scalings[TheFamily.cc.scaling] or 1),
 			pagination_type = TheFamily.UI.pagination_types[TheFamily.cc.pagination_type] or "page",
 			position_on_screen = TheFamily.UI.positions_on_screen[TheFamily.cc.position_on_screen] or "right",
+			tabs_per_page = math.floor(TheFamily.UI.tabs_per_page / (TheFamily.UI.scalings[TheFamily.cc.scaling] or 1)),
 		}
 	end,
 

@@ -65,7 +65,7 @@ function TheFamilyCardArea:_create_container()
 	elseif ui_values.position_on_screen == "left" then
 		config.align = "tl"
 		config.offset = {
-			x = 0,
+			x = 0.75,
 			y = 1,
 		}
 
@@ -136,33 +136,40 @@ function TheFamilyCardArea:set_card_position(card, index, force_position)
 		highlight_dx = (is_first_card_selected or is_any_card_hovered) and -0.425 or -0.2
 	end
 
+	local dx_scale = ui_values.scale / 0.4
+
 	if ui_values.position_on_screen == "right" then
 		card.T.x = self.T.x
-			- (highlight_dx * math.sin(ui_values.r_rad))
+			- (highlight_dx * math.sin(ui_values.r_rad) * dx_scale)
 			+ G.ROOM.T.x
-			- G.CARD_W * (ui_values.scale - 0.5)
+			- G.CARD_W * -0.1 * dx_scale
 			- G.CARD_H / 2 * ui_values.scale
-		card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad)) + ui_values.gap * index
+		card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad) * dx_scale) + ui_values.gap * index
 		card.T.r = ui_values.r_rad
 	elseif ui_values.position_on_screen == "left" then
-		card.T.x = self.T.x + (highlight_dx * math.sin(ui_values.r_rad)) - G.ROOM.T.x + G.CARD_H / 2 * ui_values.scale
-		card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad)) + ui_values.gap * index
+		card.T.x = self.T.x
+			+ (highlight_dx * math.sin(ui_values.r_rad) * dx_scale)
+			- G.ROOM.T.x
+			+ G.CARD_W * -0.1 * dx_scale
+		card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad) * dx_scale) + ui_values.gap * index
 		card.T.r = -ui_values.r_rad
 	elseif ui_values.position_on_screen == "bottom" then
 		card.T.y = self.T.y
-			+ (highlight_dx * math.cos(ui_values.r_rad + math.rad(90)))
+			+ (highlight_dx * math.cos(ui_values.r_rad + math.rad(90)) * dx_scale)
 			+ G.ROOM.T.y / 2
-			- G.CARD_H * (ui_values.scale - 0.5)
+			- G.CARD_H * -0.1 * dx_scale
 			+ G.CARD_W / 2 * ui_values.scale
-		card.T.x = self.T.x - (highlight_dx * math.sin(ui_values.r_rad + math.rad(90))) + ui_values.gap * index
+		card.T.x = self.T.x
+			- (highlight_dx * math.sin(ui_values.r_rad + math.rad(90)) * dx_scale)
+			+ ui_values.gap * index
 		card.T.r = ui_values.r_rad + math.rad(90)
 	else
 		card.T.x = self.T.x
-			- (highlight_dx * math.sin(ui_values.r_rad))
+			- (highlight_dx * math.sin(ui_values.r_rad) * dx_scale)
 			+ G.ROOM.T.x
-			- G.CARD_W * (ui_values.scale - 0.5)
+			- G.CARD_W * -0.1 * dx_scale
 			- G.CARD_H / 2 * ui_values.scale
-		card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad)) + ui_values.gap * index
+		card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad) * dx_scale) + ui_values.gap * index
 		card.T.r = ui_values.r_rad
 	end
 	if force_position then
@@ -404,14 +411,14 @@ function TheFamilyCardArea:_scroll(dx)
 	end
 
 	local area_width = #TheFamily.UI.area.cards * ui_values.gap
-	if ui.ui_values.position_on_screen == "right" or ui.ui_values.position_on_screen == "left" then
+	if ui_values.position_on_screen == "right" or ui_values.position_on_screen == "left" then
 		local max_y = 1
 		local min_y = math.min(max_y, -area_width + G.ROOM_ATTACH.T.h + 0.5)
 		local current_y = TheFamily.UI.area_container.config.offset.y
 		local diff_y = (dx > 0 and 0.5) or (dx < 0 and -0.5) or 0
 		local new_y = math.min(max_y, math.max(min_y, current_y + diff_y))
 		TheFamily.UI.area_container.config.offset.y = new_y
-	elseif ui.ui_values.position_on_screen == "top" or ui.ui_values.position_on_screen == "bottom" then
+	elseif ui_values.position_on_screen == "top" or ui_values.position_on_screen == "bottom" then
 		local max_x = 0
 		local min_x = math.min(max_x, -area_width + G.ROOM_ATTACH.T.h + 0.5)
 		local current_x = TheFamily.UI.area_container.config.offset.x
@@ -562,8 +569,8 @@ function TheFamilyCardArea:create_page_cards()
 	local tabs_to_render = {}
 	local ui_values = TheFamily.UI.get_ui_values()
 	if ui_values.pagination_type == "page" then
-		local start_index = 1 + TheFamily.UI.tabs_per_page * (TheFamily.UI.page - 1)
-		local end_index = start_index + TheFamily.UI.tabs_per_page
+		local start_index = 1 + ui_values.tabs_per_page * (TheFamily.UI.page - 1)
+		local end_index = start_index + ui_values.tabs_per_page
 		local current_index = 1
 		for _, group in ipairs(TheFamily.tab_groups.list) do
 			if current_index >= end_index then
@@ -588,7 +595,7 @@ function TheFamilyCardArea:create_page_cards()
 
 		EMPTY(self.rendered_tabs.dictionary)
 
-		for i = 1, TheFamily.UI.tabs_per_page do
+		for i = 1, ui_values.tabs_per_page do
 			if tabs_to_render[i] then
 				self.rendered_tabs.dictionary[tabs_to_render[i].key] = tabs_to_render[i]
 				tabs_to_render[i]:create_card(i + 2)
@@ -620,7 +627,7 @@ function TheFamilyCardArea:create_initial_cards()
 	}):create_card(nil, true)
 	local ui_values = TheFamily.UI.get_ui_values()
 	if ui_values.pagination_type == "page" then
-		for i = 1, TheFamily.UI.tabs_per_page do
+		for i = 1, ui_values.tabs_per_page do
 			TheFamilyTab({
 				type = "filler",
 			}):create_card(nil, true)

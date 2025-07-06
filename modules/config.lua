@@ -1,6 +1,7 @@
 local default_config = {
 	pagination_type = 1,
 	position_on_screen = 1,
+	scaling = 1,
 }
 
 TheFamily.config = {

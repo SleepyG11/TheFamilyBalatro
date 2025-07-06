@@ -14,6 +14,12 @@ TheFamily.UI.get_config_tab_overall = function()
 			TheFamily.cc.position_on_screen,
 			"thefamily_change_screen_position"
 		),
+		TheFamily.UI.PARTS.create_option_cycle(
+			"UI scale",
+			{ "1x", "1.1x", "1.2x" },
+			TheFamily.cc.scaling,
+			"thefamily_change_scaling"
+		),
 	}
 end
 
