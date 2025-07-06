@@ -4,9 +4,15 @@ TheFamily.UI.get_config_tab_overall = function()
 	return {
 		TheFamily.UI.PARTS.create_option_cycle(
 			"Tabs display mode",
-			{ "Pages", "Scrollable" },
+			{ "Scrollable", "Pages" },
 			TheFamily.cc.pagination_type,
 			"thefamily_change_pagination_type"
+		),
+		TheFamily.UI.PARTS.create_option_cycle(
+			"Position on screen",
+			{ "Left", "Right" },
+			TheFamily.cc.position_on_screen,
+			"thefamily_change_screen_position"
 		),
 	}
 end

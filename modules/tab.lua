@@ -293,7 +293,13 @@ function TheFamilyTab:render_front_label()
 	box.states.hover.can = false
 	box.states.click.can = false
 	box.role.r_bond = "Weak"
-	box.T.r = math.rad(ui_values.r_deg + 90)
+	if ui_values.position_on_screen == "right" then
+		box.T.r = math.rad(ui_values.r_deg + 90)
+	elseif ui_values.position_on_screen == "left" then
+		box.T.r = -math.rad(ui_values.r_deg + 90)
+	else
+		box.T.r = math.rad(ui_values.r_deg + 90)
+	end
 	self.card.children.front_label = box
 end
 function TheFamilyTab:render_alert()
@@ -353,12 +359,37 @@ function TheFamilyTab:render_alert()
 				},
 			},
 		}
-	config = config or {
-		offset = {
-			x = -0.1 * ui_values.scale,
-			y = -0.1 * ui_values.scale,
-		},
-	}
+	config = config or {}
+	local default_config = {}
+	if ui_values.position_on_screen == "right" then
+		default_config = {
+			align = "tli",
+			offset = {
+				x = -0.1 * ui_values.scale,
+				y = -0.1 * ui_values.scale,
+			},
+		}
+	elseif ui_values.position_on_screen == "left" then
+		default_config = {
+			align = "tri",
+			offset = {
+				x = 0.1 * ui_values.scale,
+				y = -0.1 * ui_values.scale,
+			},
+		}
+	else
+		default_config = {
+			align = "tli",
+			offset = {
+				x = -0.1 * ui_values.scale,
+				y = -0.1 * ui_values.scale,
+			},
+		}
+	end
+
+	local result_config = TheFamily.utils.table_merge(default_config, config)
+	result_config.parent = self.card
+	result_config.instance_type = "POPUP"
 
 	local box = UIBox({
 		definition = {
@@ -366,15 +397,7 @@ function TheFamilyTab:render_alert()
 			config = { align = "cm", colour = G.C.CLEAR, refresh_movement = true },
 			nodes = { alert },
 		},
-		config = {
-			align = config.align or "tli",
-			offset = {
-				x = (config.offset or {}).x or (-0.1 * ui_values.scale),
-				y = (config.offset or {}).y or (-0.1 * ui_values.scale),
-			},
-			parent = self.card,
-			instance_type = "POPUP",
-		},
+		config = result_config,
 	})
 	if not config.collideable then
 		box.states.collide.can = false
@@ -471,17 +494,33 @@ function TheFamilyTab:render_popup()
 		return
 	end
 
-	if popup then
-		popup_config = popup_config
-			or {
+	local ui_values = TheFamily.UI.get_ui_values()
+	if not popup_config then
+		if ui_values.position_on_screen == "right" then
+			popup_config = {
 				align = "cl",
 				offset = { x = -0.25, y = 0 },
-				parent = self.card,
-				xy_bond = "Strong",
-				r_bond = "Weak",
-				wh_bond = "Weak",
 			}
-		popup_config.instance_type = "POPUP"
+		elseif ui_values.position_on_screen == "left" then
+			popup_config = {
+				align = "cr",
+				offset = { x = 0.25, y = 0 },
+			}
+		else
+			popup_config = {
+				align = "cl",
+				offset = { x = -0.25, y = 0 },
+			}
+		end
+	end
+
+	if popup then
+		popup_config = TheFamily.utils.table_merge(popup_config, {
+			xy_bond = "Strong",
+			r_bond = "Weak",
+			wh_bond = "Weak",
+			instance_type = "POPUP",
+		})
 		popup_config.parent = self.card
 
 		local box = UIBox({

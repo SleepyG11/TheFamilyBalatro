@@ -28,3 +28,8 @@ function G.FUNCS.thefamily_change_pagination_type(arg)
 	TheFamily.config.save()
 	TheFamily.rerender_area()
 end
+function G.FUNCS.thefamily_change_screen_position(arg)
+	TheFamily.cc.position_on_screen = arg.to_key
+	TheFamily.config.save()
+	TheFamily.rerender_area()
+end

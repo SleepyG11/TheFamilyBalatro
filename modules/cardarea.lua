@@ -32,6 +32,62 @@ function TheFamilyCardArea:init()
 		dictionary = {},
 	}
 
+	if TheFamily.UI.area then
+		TheFamily.UI.area:remove()
+	end
+	TheFamily.UI.area = self
+
+	self:_create_container()
+end
+
+function TheFamilyCardArea:_create_container()
+	local ui_values = TheFamily.UI.get_ui_values()
+	local config = {
+		align = "tr",
+		major = G.ROOM_ATTACH,
+		bond = "Strong",
+		offset = {
+			x = 0,
+			y = 1,
+		},
+		instance_type = "POPUP",
+	}
+	-- Counterclockwise
+	local rotation_deg = 90
+	if ui_values.position_on_screen == "right" then
+		config.align = "tr"
+		config.offset = {
+			x = 0,
+			y = 1,
+		}
+
+		rotation_deg = 90
+	elseif ui_values.position_on_screen == "left" then
+		config.align = "tl"
+		config.offset = {
+			x = 0,
+			y = 1,
+		}
+
+		rotation_deg = 90
+	elseif ui_values.position_on_screen == "bottom" then
+		config.align = "bl"
+		config.offset = {
+			x = 0,
+			y = 0,
+		}
+
+		rotation_deg = 0
+	elseif ui_values.position_on_screen == "top" then
+		config.align = "tl"
+		config.offset = {
+			x = 0,
+			y = 0,
+		}
+
+		rotation_deg = 0
+	end
+
 	local area_container = UIBox({
 		definition = {
 			n = G.UIT.ROOT,
@@ -45,26 +101,13 @@ function TheFamilyCardArea:init()
 				},
 			},
 		},
-		config = {
-			align = "tr",
-			major = G.ROOM_ATTACH,
-			bond = "Strong",
-			offset = {
-				x = 0,
-				y = 1,
-			},
-			instance_type = "POPUP",
-		},
+		config = config,
 	})
-	area_container.T.r = math.pi / 2
+	area_container.T.r = math.rad(rotation_deg)
 
-	if TheFamily.UI.area then
-		TheFamily.UI.area:remove()
-	end
 	if TheFamily.UI.area_container then
 		TheFamily.UI.area_container:remove()
 	end
-	TheFamily.UI.area = self
 	TheFamily.UI.area_container = area_container
 end
 
@@ -92,13 +135,36 @@ function TheFamilyCardArea:set_card_position(card, index, force_position)
 	if card.highlighted then
 		highlight_dx = (is_first_card_selected or is_any_card_hovered) and -0.425 or -0.2
 	end
-	card.T.x = self.T.x
-		- (highlight_dx * math.sin(ui_values.r_rad))
-		+ G.ROOM.T.x
-		- G.CARD_W * (ui_values.scale - 0.5)
-		- G.CARD_H / 2 * ui_values.scale
-	card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad)) + ui_values.gap * index
-	card.T.r = ui_values.r_rad
+
+	if ui_values.position_on_screen == "right" then
+		card.T.x = self.T.x
+			- (highlight_dx * math.sin(ui_values.r_rad))
+			+ G.ROOM.T.x
+			- G.CARD_W * (ui_values.scale - 0.5)
+			- G.CARD_H / 2 * ui_values.scale
+		card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad)) + ui_values.gap * index
+		card.T.r = ui_values.r_rad
+	elseif ui_values.position_on_screen == "left" then
+		card.T.x = self.T.x + (highlight_dx * math.sin(ui_values.r_rad)) - G.ROOM.T.x + G.CARD_H / 2 * ui_values.scale
+		card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad)) + ui_values.gap * index
+		card.T.r = -ui_values.r_rad
+	elseif ui_values.position_on_screen == "bottom" then
+		card.T.y = self.T.y
+			+ (highlight_dx * math.cos(ui_values.r_rad + math.rad(90)))
+			+ G.ROOM.T.y / 2
+			- G.CARD_H * (ui_values.scale - 0.5)
+			+ G.CARD_W / 2 * ui_values.scale
+		card.T.x = self.T.x - (highlight_dx * math.sin(ui_values.r_rad + math.rad(90))) + ui_values.gap * index
+		card.T.r = ui_values.r_rad + math.rad(90)
+	else
+		card.T.x = self.T.x
+			- (highlight_dx * math.sin(ui_values.r_rad))
+			+ G.ROOM.T.x
+			- G.CARD_W * (ui_values.scale - 0.5)
+			- G.CARD_H / 2 * ui_values.scale
+		card.T.y = self.T.y + (highlight_dx * math.cos(ui_values.r_rad)) + ui_values.gap * index
+		card.T.r = ui_values.r_rad
+	end
 	if force_position then
 		-- TODO: force correct rotation SOMEHOW GODDAMNIT
 		card:hard_set_T()
@@ -336,14 +402,23 @@ function TheFamilyCardArea:_scroll(dx)
 	if ui_values.pagination_type ~= "scroll" then
 		return
 	end
-	-- For now only vertical movement
+
 	local area_width = #TheFamily.UI.area.cards * ui_values.gap
-	local max_y = 1
-	local min_y = math.min(max_y, -area_width + G.ROOM_ATTACH.T.h + 0.5)
-	local current_y = TheFamily.UI.area_container.config.offset.y
-	local diff_y = (dx > 0 and 0.5) or (dx < 0 and -0.5) or 0
-	local new_y = math.min(max_y, math.max(min_y, current_y + diff_y))
-	TheFamily.UI.area_container.config.offset.y = new_y
+	if ui.ui_values.position_on_screen == "right" or ui.ui_values.position_on_screen == "left" then
+		local max_y = 1
+		local min_y = math.min(max_y, -area_width + G.ROOM_ATTACH.T.h + 0.5)
+		local current_y = TheFamily.UI.area_container.config.offset.y
+		local diff_y = (dx > 0 and 0.5) or (dx < 0 and -0.5) or 0
+		local new_y = math.min(max_y, math.max(min_y, current_y + diff_y))
+		TheFamily.UI.area_container.config.offset.y = new_y
+	elseif ui.ui_values.position_on_screen == "top" or ui.ui_values.position_on_screen == "bottom" then
+		local max_x = 0
+		local min_x = math.min(max_x, -area_width + G.ROOM_ATTACH.T.h + 0.5)
+		local current_x = TheFamily.UI.area_container.config.offset.x
+		local diff_x = (dx > 0 and -0.5) or (dx < 0 and 0.5) or 0
+		local new_x = math.min(max_x, math.max(min_x, current_x + diff_x))
+		TheFamily.UI.area_container.config.offset.x = new_x
+	end
 end
 
 function TheFamilyCardArea:_init_core_tabs()
@@ -370,7 +445,7 @@ function TheFamilyCardArea:_init_core_tabs()
 				local ui_values = TheFamily.UI.get_ui_values()
 				return {
 					definition_function = function()
-						local result = TheFamily.UI.create_UI_dark_alert(card, {
+						local result = TheFamily.UI.PARTS.create_dark_alert(card, {
 							{
 								n = G.UIT.T,
 								config = {
@@ -417,7 +492,7 @@ function TheFamilyCardArea:_init_core_tabs()
 				local info = TheFamily.UI.get_ui_values()
 				return {
 					definition_function = function()
-						return TheFamily.UI.create_UI_dark_alert(card, {
+						return TheFamily.UI.PARTS.create_dark_alert(card, {
 							{
 								n = G.UIT.O,
 								config = {

@@ -10,8 +10,14 @@ TheFamily.UI = {
 	scale = 0.4,
 
 	pagination_types = {
-		"page",
 		"scroll",
+		"page",
+	},
+	positions_on_screen = {
+		"right",
+		"left",
+		-- "top",
+		-- "bottom",
 	},
 
 	get_ui_values = function()
@@ -21,6 +27,7 @@ TheFamily.UI = {
 			gap = TheFamily.UI.gap,
 			scale = TheFamily.UI.scale,
 			pagination_type = TheFamily.UI.pagination_types[TheFamily.cc.pagination_type] or "page",
+			position_on_screen = TheFamily.UI.positions_on_screen[TheFamily.cc.position_on_screen] or "right",
 		}
 	end,
 
@@ -31,29 +38,6 @@ TheFamily.UI = {
 
 	area = nil,
 	area_container = nil,
-
-	create_UI_dark_alert = function(card, content)
-		local info = TheFamily.UI.get_ui_values()
-		return {
-			definition = {
-				n = G.UIT.R,
-				config = {
-					align = "cm",
-					padding = 0.1 * info.scale,
-					r = 0.02 * info.scale,
-					colour = HEX("22222288"),
-				},
-				nodes = content,
-			},
-			config = {
-				align = "tri",
-				offset = {
-					x = card.T.w * math.sin(info.r_rad) + 0.21 * info.scale,
-					y = 0.15 * info.scale,
-				},
-			},
-		}
-	end,
 }
 
 local loc_colour_ref = loc_colour

@@ -131,6 +131,13 @@ function TheFamily.rerender_area()
 	TheFamily.toggle_and_sort_tab_groups()
 	TheFamily.toggle_and_sort_enabled_tabs()
 
+	local ui_values = TheFamily.UI.get_ui_values()
+	if ui_values.position_on_screen == "bottom" or ui_values.position_on_screen == "top" then
+		TheFamily.UI.tabs_per_page = 22
+	else
+		TheFamily.UI.tabs_per_page = 15
+	end
+
 	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / TheFamily.UI.tabs_per_page)
 	TheFamily.UI.page = math.min(TheFamily.UI.max_page, TheFamily.UI.page)
 
@@ -322,7 +329,7 @@ TheFamily.own_tabs.time_tracker = {
 		return {
 			definition_function = function()
 				local info = TheFamily.UI.get_ui_values()
-				return TheFamily.UI.create_UI_dark_alert(card, {
+				return TheFamily.UI.PARTS.create_dark_alert(card, {
 					{
 						n = G.UIT.O,
 						config = {
