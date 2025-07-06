@@ -115,7 +115,8 @@ function TheFamily.init()
 	TheFamily.toggle_and_sort_tab_groups()
 	TheFamily.toggle_and_sort_enabled_tabs()
 
-	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / TheFamily.UI.tabs_per_page)
+	local ui_values = TheFamily.UI.get_ui_values()
+	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / ui_values.tabs_per_page)
 	TheFamily.UI.page = 1
 
 	TheFamily.own_tabs.time_tracker.last_hand = 0
@@ -137,8 +138,9 @@ function TheFamily.rerender_area()
 	else
 		TheFamily.UI.tabs_per_page = 15
 	end
+	ui_values = TheFamily.UI.get_ui_values()
 
-	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / TheFamily.UI.tabs_per_page)
+	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / ui_values.tabs_per_page)
 	TheFamily.UI.page = math.min(TheFamily.UI.max_page, TheFamily.UI.page)
 
 	local rerender_data = TheFamily.UI.area:_save_rerender_data()

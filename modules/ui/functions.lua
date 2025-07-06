@@ -33,3 +33,8 @@ function G.FUNCS.thefamily_change_screen_position(arg)
 	TheFamily.config.save()
 	TheFamily.rerender_area()
 end
+function G.FUNCS.thefamily_change_scaling(arg)
+	TheFamily.cc.scaling = arg.to_key
+	TheFamily.config.save()
+	TheFamily.rerender_area()
+end
