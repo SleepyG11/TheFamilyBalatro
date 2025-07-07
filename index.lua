@@ -267,19 +267,13 @@ TheFamily.own_tabs.time_tracker = {
 						},
 						nodes = {
 							{
-								n = G.UIT.O,
+								n = G.UIT.T,
 								config = {
-									object = DynaText({
-										string = {
-											{
-												ref_table = row.ref_table,
-												ref_value = row.ref_value,
-											},
-										},
-										colours = { G.C.CHIPS },
-										maxw = 3,
-										scale = 0.3,
-									}),
+									ref_table = row.ref_table,
+									ref_value = row.ref_value,
+									colour = G.C.CHIPS,
+									maxw = 3,
+									scale = 0.3,
 								},
 							},
 						},
@@ -333,18 +327,12 @@ TheFamily.own_tabs.time_tracker = {
 				local info = TheFamily.UI.get_ui_values()
 				return TheFamily.UI.PARTS.create_dark_alert(card, {
 					{
-						n = G.UIT.O,
+						n = G.UIT.T,
 						config = {
-							object = DynaText({
-								string = {
-									{
-										ref_table = TheFamily.own_tabs.time_tracker,
-										ref_value = "alert_label",
-									},
-								},
-								colours = { G.C.WHITE },
-								scale = 0.45 * info.scale,
-							}),
+							ref_table = TheFamily.own_tabs.time_tracker,
+							ref_value = "alert_label",
+							colour = G.C.WHITE,
+							scale = 0.45 * info.scale,
 						},
 					},
 				})

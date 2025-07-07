@@ -252,6 +252,13 @@ function TheFamilyTab:render_front_label()
 
 	local ui_values = TheFamily.UI.get_ui_values()
 	local front_label, config
+
+	front_label_result.scale = (front_label_result.scale or 0.5) * ui_values.scale
+	front_label_result.colour = front_label_result.colour or G.C.WHITE
+	if not front_label_result.ref_value then
+		front_label_result.text = front_label_result.text or ""
+	end
+
 	front_label = {
 		n = G.UIT.ROOT,
 		config = { colour = G.C.CLEAR, align = "cm" },
@@ -266,11 +273,7 @@ function TheFamilyTab:render_front_label()
 				nodes = {
 					{
 						n = G.UIT.T,
-						config = {
-							text = front_label_result.text or "",
-							scale = (front_label_result.scale or 0.5) * ui_values.scale,
-							colour = front_label_result.colour or G.C.WHITE,
-						},
+						config = front_label_result,
 					},
 				},
 			},
@@ -283,23 +286,33 @@ function TheFamilyTab:render_front_label()
 			y = 0,
 		},
 		parent = self.card,
+		r_bond = "Weak",
 	}
+	local r
+	if ui_values.position_on_screen == "right" then
+		r = math.rad(ui_values.r_deg + 90)
+	elseif ui_values.position_on_screen == "left" then
+		r = -math.rad(ui_values.r_deg + 90)
+	else
+		r = math.rad(ui_values.r_deg + 90)
+	end
 
 	local box = UIBox({
 		definition = front_label,
 		config = config,
+		T = {
+			r = r,
+			T = {
+				r = r,
+			},
+		},
 	})
+	box.T.r = r
+	box.VT.r = r
 	box.states.collide.can = false
 	box.states.hover.can = false
 	box.states.click.can = false
-	box.role.r_bond = "Weak"
-	if ui_values.position_on_screen == "right" then
-		box.T.r = math.rad(ui_values.r_deg + 90)
-	elseif ui_values.position_on_screen == "left" then
-		box.T.r = -math.rad(ui_values.r_deg + 90)
-	else
-		box.T.r = math.rad(ui_values.r_deg + 90)
-	end
+
 	self.card.children.front_label = box
 end
 function TheFamilyTab:render_alert()
@@ -387,9 +400,11 @@ function TheFamilyTab:render_alert()
 		}
 	end
 
-	local result_config = TheFamily.utils.table_merge(default_config, config)
+	local result_config = TheFamily.utils.table_merge(default_config, config, {
+		instance_type = "POPUP",
+		r_bond = "Weak",
+	})
 	result_config.parent = self.card
-	result_config.instance_type = "POPUP"
 
 	local box = UIBox({
 		definition = {
@@ -398,15 +413,22 @@ function TheFamilyTab:render_alert()
 			nodes = { alert },
 		},
 		config = result_config,
+		T = {
+			r = 0,
+			T = {
+				r = 0,
+			},
+		},
 	})
+	box.T.r = 0
+	box.VT.r = 0
+	box.T.scale = ui_values.scale
 	if not config.collideable then
 		box.states.collide.can = false
 	end
 	box.states.hover.can = false
 	box.states.click.can = false
-	box.role.r_bond = "Weak"
-	box.T.r = 0
-	box.T.scale = ui_values.scale
+
 	self.card.children.alert = box
 end
 function TheFamilyTab:render_popup()
@@ -559,13 +581,13 @@ function TheFamilyTab:_can_unhighlight()
 	return true
 end
 
-function TheFamilyTab:open()
+function TheFamilyTab:open(without_callbacks)
 	if TheFamily.UI.area then
-		TheFamily.UI.area:_open_and_highlight(self)
+		TheFamily.UI.area:_open_and_highlight(self, without_callbacks)
 	end
 end
-function TheFamilyTab:close()
+function TheFamilyTab:close(without_callbacks)
 	if TheFamily.UI.area then
-		TheFamily.UI.area:_close_and_unhighlight(self)
+		TheFamily.UI.area:_close_and_unhighlight(self, without_callbacks)
 	end
 end

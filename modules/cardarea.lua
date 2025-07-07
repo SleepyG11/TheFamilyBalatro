@@ -52,40 +52,30 @@ function TheFamilyCardArea:_create_container()
 		},
 		instance_type = "POPUP",
 	}
-	-- Counterclockwise
-	local rotation_deg = 90
 	if ui_values.position_on_screen == "right" then
 		config.align = "tr"
 		config.offset = {
 			x = 0,
 			y = 1,
 		}
-
-		rotation_deg = 90
 	elseif ui_values.position_on_screen == "left" then
 		config.align = "tl"
 		config.offset = {
 			x = 0.75,
 			y = 1,
 		}
-
-		rotation_deg = 90
 	elseif ui_values.position_on_screen == "bottom" then
 		config.align = "bl"
 		config.offset = {
 			x = 0,
 			y = 0,
 		}
-
-		rotation_deg = 0
 	elseif ui_values.position_on_screen == "top" then
 		config.align = "tl"
 		config.offset = {
 			x = 0,
 			y = 0,
 		}
-
-		rotation_deg = 0
 	end
 
 	local area_container = UIBox({
@@ -103,8 +93,6 @@ function TheFamilyCardArea:_create_container()
 		},
 		config = config,
 	})
-	area_container.T.r = math.rad(rotation_deg)
-
 	if TheFamily.UI.area_container then
 		TheFamily.UI.area_container:remove()
 	end
@@ -209,7 +197,16 @@ function TheFamilyCardArea:emplace(card)
 	if not card then
 		return
 	end
-	CardArea.emplace(self, card)
+
+	if self.__emplace_index then
+		table.insert(self.cards, self.__emplace_index, card)
+	else
+		self.cards[#self.cards + 1] = card
+	end
+
+	card:set_card_area(self)
+	self:set_ranks()
+
 	local tab = card.thefamily_tab
 	if tab and tab.key then
 		if self:_is_tab_opened(tab) then
@@ -218,11 +215,15 @@ function TheFamilyCardArea:emplace(card)
 			self:_open_and_highlight(tab)
 		end
 	end
+
+	self:align_cards()
+	self:set_card_position(card, self.__emplace_index or #self.cards, true)
 end
 function TheFamilyCardArea:replace(card, replace_index)
 	if not card then
 		return
 	end
+
 	local target_card = self.cards[replace_index]
 	if not target_card then
 		return
@@ -235,10 +236,10 @@ function TheFamilyCardArea:replace(card, replace_index)
 		self:_unhighlight_tab(tab)
 	end
 	target_card:remove()
+
+	self.__emplace_index = replace_index
 	self:emplace(card)
-	table.insert(self.cards, replace_index, card)
-	self.cards[#self.cards] = nil
-	self:set_card_position(card, replace_index, true)
+	self.__emplace_index = nil
 end
 function TheFamilyCardArea:remove_card(card)
 	if not card then
@@ -357,7 +358,7 @@ function TheFamilyCardArea:_is_tab_opened(tab)
 	return tab and tab.key and self.opened_tabs.dictionary[tab.key] and true
 end
 
-function TheFamilyCardArea:_open(tab)
+function TheFamilyCardArea:_open(tab, without_callbacks)
 	if tab and tab.key then
 		if self:_is_tab_opened(tab) or not tab:_can_highlight() then
 			return
@@ -365,17 +366,21 @@ function TheFamilyCardArea:_open(tab)
 		if tab.type == "overlay" and not self:_close_overlay() then
 			return
 		end
-		tab:highlight(tab.card)
+		if not without_callbacks then
+			tab:highlight(tab.card)
+		end
 		self:_add_opened_tab(tab)
 		return true
 	end
 end
-function TheFamilyCardArea:_close(tab)
+function TheFamilyCardArea:_close(tab, without_callbacks)
 	if tab and tab.key then
 		if not self:_is_tab_opened(tab) or not tab:_can_unhighlight() then
 			return
 		end
-		tab:unhighlight(tab.card)
+		if not without_callbacks then
+			tab:unhighlight(tab.card)
+		end
 		self:_remove_opened_tab(tab)
 		return true
 	end
@@ -388,14 +393,14 @@ function TheFamilyCardArea:_close_overlay()
 	end
 end
 
-function TheFamilyCardArea:_open_and_highlight(tab)
-	if self:_open(tab) then
+function TheFamilyCardArea:_open_and_highlight(tab, without_callbacks)
+	if self:_open(tab, without_callbacks) then
 		self:_highlight_tab(tab)
 		return true
 	end
 end
-function TheFamilyCardArea:_close_and_unhighlight(tab)
-	if self:_close(tab) then
+function TheFamilyCardArea:_close_and_unhighlight(tab, without_callbacks)
+	if self:_close(tab, without_callbacks) then
 		self:_unhighlight_tab(tab)
 		return true
 	end
@@ -501,22 +506,12 @@ function TheFamilyCardArea:_init_core_tabs()
 					definition_function = function()
 						return TheFamily.UI.PARTS.create_dark_alert(card, {
 							{
-								n = G.UIT.O,
+								n = G.UIT.T,
 								config = {
-									object = DynaText({
-										string = {
-											{
-												ref_table = TheFamily.UI,
-												ref_value = "page",
-											},
-										},
-										colours = { G.C.WHITE },
-										shadow = true,
-										silent = true,
-										bump = true,
-										pop_in = 0.2,
-										scale = 0.4 * info.scale,
-									}),
+									ref_table = TheFamily.UI,
+									ref_value = "page",
+									scale = 0.4 * info.scale,
+									colour = G.C.WHITE,
 								},
 							},
 							{
@@ -528,22 +523,12 @@ function TheFamilyCardArea:_init_core_tabs()
 								},
 							},
 							{
-								n = G.UIT.O,
+								n = G.UIT.T,
 								config = {
-									object = DynaText({
-										string = {
-											{
-												ref_table = TheFamily.UI,
-												ref_value = "max_page",
-											},
-										},
-										colours = { G.C.WHITE },
-										shadow = true,
-										silent = true,
-										bump = true,
-										pop_in = 0.2,
-										scale = 0.4 * info.scale,
-									}),
+									ref_table = TheFamily.UI,
+									ref_value = "max_page",
+									scale = 0.4 * info.scale,
+									colour = G.C.WHITE,
 								},
 							},
 						})
@@ -618,6 +603,9 @@ function TheFamilyCardArea:create_page_cards()
 			tabs_to_render[i]:create_card(i + 2)
 		end
 	end
+	self:calculate_parrallax()
+	self:align_cards()
+	self:hard_set_cards()
 end
 function TheFamilyCardArea:create_initial_cards()
 	self:_init_core_tabs()
@@ -650,6 +638,9 @@ function TheFamilyCardArea:create_initial_cards()
 			}):create_card(nil, true)
 		end
 	end
+	self:calculate_parrallax()
+	self:align_cards()
+	self:hard_set_cards()
 end
 function TheFamilyCardArea:init_cards(rerender_data)
 	if rerender_data then
