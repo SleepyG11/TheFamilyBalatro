@@ -502,22 +502,12 @@ function TheFamilyCardArea:_init_core_tabs()
 					definition_function = function()
 						return TheFamily.UI.PARTS.create_dark_alert(card, {
 							{
-								n = G.UIT.O,
+								n = G.UIT.T,
 								config = {
-									object = DynaText({
-										string = {
-											{
-												ref_table = TheFamily.UI,
-												ref_value = "page",
-											},
-										},
-										colours = { G.C.WHITE },
-										shadow = true,
-										silent = true,
-										bump = true,
-										pop_in = 0.2,
-										scale = 0.4 * info.scale,
-									}),
+									ref_table = TheFamily.UI,
+									ref_value = "page",
+									scale = 0.4 * info.scale,
+									colour = G.C.WHITE,
 								},
 							},
 							{
@@ -529,22 +519,12 @@ function TheFamilyCardArea:_init_core_tabs()
 								},
 							},
 							{
-								n = G.UIT.O,
+								n = G.UIT.T,
 								config = {
-									object = DynaText({
-										string = {
-											{
-												ref_table = TheFamily.UI,
-												ref_value = "max_page",
-											},
-										},
-										colours = { G.C.WHITE },
-										shadow = true,
-										silent = true,
-										bump = true,
-										pop_in = 0.2,
-										scale = 0.4 * info.scale,
-									}),
+									ref_table = TheFamily.UI,
+									ref_value = "max_page",
+									scale = 0.4 * info.scale,
+									colour = G.C.WHITE,
 								},
 							},
 						})
