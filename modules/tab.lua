@@ -252,6 +252,13 @@ function TheFamilyTab:render_front_label()
 
 	local ui_values = TheFamily.UI.get_ui_values()
 	local front_label, config
+
+	front_label_result.scale = (front_label_result.scale or 0.5) * ui_values.scale
+	front_label_result.colour = front_label_result.colour or G.C.WHITE
+	if not front_label_result.ref_value then
+		front_label_result.text = front_label_result.text or ""
+	end
+
 	front_label = {
 		n = G.UIT.ROOT,
 		config = { colour = G.C.CLEAR, align = "cm" },
@@ -266,11 +273,7 @@ function TheFamilyTab:render_front_label()
 				nodes = {
 					{
 						n = G.UIT.T,
-						config = {
-							text = front_label_result.text or "",
-							scale = (front_label_result.scale or 0.5) * ui_values.scale,
-							colour = front_label_result.colour or G.C.WHITE,
-						},
+						config = front_label_result,
 					},
 				},
 			},
