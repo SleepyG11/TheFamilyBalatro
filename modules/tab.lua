@@ -581,13 +581,21 @@ function TheFamilyTab:_can_unhighlight()
 	return true
 end
 
-function TheFamilyTab:open()
+function TheFamilyTab:open(only_visually)
 	if TheFamily.UI.area then
-		TheFamily.UI.area:_open_and_highlight(self)
+		if only_visually then
+			TheFamily.UI.area:_highlight_tab(self)
+		else
+			TheFamily.UI.area:_open_and_highlight(self)
+		end
 	end
 end
-function TheFamilyTab:close()
+function TheFamilyTab:close(only_visually)
 	if TheFamily.UI.area then
-		TheFamily.UI.area:_close_and_unhighlight(self)
+		if only_visually then
+			TheFamily.UI.area:_unhighlight_tab(self)
+		else
+			TheFamily.UI.area:_close_and_unhighlight(self)
+		end
 	end
 end
