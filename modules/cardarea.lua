@@ -52,40 +52,30 @@ function TheFamilyCardArea:_create_container()
 		},
 		instance_type = "POPUP",
 	}
-	-- Counterclockwise
-	local rotation_deg = 90
 	if ui_values.position_on_screen == "right" then
 		config.align = "tr"
 		config.offset = {
 			x = 0,
 			y = 1,
 		}
-
-		rotation_deg = 90
 	elseif ui_values.position_on_screen == "left" then
 		config.align = "tl"
 		config.offset = {
 			x = 0.75,
 			y = 1,
 		}
-
-		rotation_deg = 90
 	elseif ui_values.position_on_screen == "bottom" then
 		config.align = "bl"
 		config.offset = {
 			x = 0,
 			y = 0,
 		}
-
-		rotation_deg = 0
 	elseif ui_values.position_on_screen == "top" then
 		config.align = "tl"
 		config.offset = {
 			x = 0,
 			y = 0,
 		}
-
-		rotation_deg = 0
 	end
 
 	local area_container = UIBox({
@@ -103,8 +93,6 @@ function TheFamilyCardArea:_create_container()
 		},
 		config = config,
 	})
-	area_container.T.r = math.rad(rotation_deg)
-
 	if TheFamily.UI.area_container then
 		TheFamily.UI.area_container:remove()
 	end
@@ -209,7 +197,16 @@ function TheFamilyCardArea:emplace(card)
 	if not card then
 		return
 	end
-	CardArea.emplace(self, card)
+
+	if self.__emplace_index then
+		table.insert(self.cards, self.__emplace_index, card)
+	else
+		self.cards[#self.cards + 1] = card
+	end
+
+	card:set_card_area(self)
+	self:set_ranks()
+
 	local tab = card.thefamily_tab
 	if tab and tab.key then
 		if self:_is_tab_opened(tab) then
@@ -218,11 +215,15 @@ function TheFamilyCardArea:emplace(card)
 			self:_open_and_highlight(tab)
 		end
 	end
+
+	self:align_cards()
+	self:set_card_position(card, self.__emplace_index or #self.cards, true)
 end
 function TheFamilyCardArea:replace(card, replace_index)
 	if not card then
 		return
 	end
+
 	local target_card = self.cards[replace_index]
 	if not target_card then
 		return
@@ -235,10 +236,10 @@ function TheFamilyCardArea:replace(card, replace_index)
 		self:_unhighlight_tab(tab)
 	end
 	target_card:remove()
+
+	self.__emplace_index = replace_index
 	self:emplace(card)
-	table.insert(self.cards, replace_index, card)
-	self.cards[#self.cards] = nil
-	self:set_card_position(card, replace_index, true)
+	self.__emplace_index = nil
 end
 function TheFamilyCardArea:remove_card(card)
 	if not card then
@@ -618,6 +619,9 @@ function TheFamilyCardArea:create_page_cards()
 			tabs_to_render[i]:create_card(i + 2)
 		end
 	end
+	self:calculate_parrallax()
+	self:align_cards()
+	self:hard_set_cards()
 end
 function TheFamilyCardArea:create_initial_cards()
 	self:_init_core_tabs()
@@ -650,6 +654,9 @@ function TheFamilyCardArea:create_initial_cards()
 			}):create_card(nil, true)
 		end
 	end
+	self:calculate_parrallax()
+	self:align_cards()
+	self:hard_set_cards()
 end
 function TheFamilyCardArea:init_cards(rerender_data)
 	if rerender_data then
