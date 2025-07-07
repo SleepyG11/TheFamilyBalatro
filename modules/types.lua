@@ -30,8 +30,8 @@
 --- @field rerender_front_label fun() Function to manually rerender front_label
 --- @field rerender_popup fun() Function to manually rerender popup
 --- @field rerender_alert fun() Function to manually rerender alert
---- @field open fun() Manually open tab. All checks applied
---- @field close fun() Manually close tab. All checks applied
+--- @field open fun(without_callbacks?: boolean) Manually open tab. All checks applied. If `without_callbacks = true`, (un)highlight events will not be fired
+--- @field close fun(without_callbacks?: boolean) Manually close tab. All checks applied. If `without_callbacks = true`, (un)highlight events will not be fired
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
 --- @field add_tab fun(self: TheFamilyTab)

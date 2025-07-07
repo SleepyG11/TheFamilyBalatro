@@ -358,7 +358,7 @@ function TheFamilyCardArea:_is_tab_opened(tab)
 	return tab and tab.key and self.opened_tabs.dictionary[tab.key] and true
 end
 
-function TheFamilyCardArea:_open(tab)
+function TheFamilyCardArea:_open(tab, without_callbacks)
 	if tab and tab.key then
 		if self:_is_tab_opened(tab) or not tab:_can_highlight() then
 			return
@@ -366,17 +366,21 @@ function TheFamilyCardArea:_open(tab)
 		if tab.type == "overlay" and not self:_close_overlay() then
 			return
 		end
-		tab:highlight(tab.card)
+		if not without_callbacks then
+			tab:highlight(tab.card)
+		end
 		self:_add_opened_tab(tab)
 		return true
 	end
 end
-function TheFamilyCardArea:_close(tab)
+function TheFamilyCardArea:_close(tab, without_callbacks)
 	if tab and tab.key then
 		if not self:_is_tab_opened(tab) or not tab:_can_unhighlight() then
 			return
 		end
-		tab:unhighlight(tab.card)
+		if not without_callbacks then
+			tab:unhighlight(tab.card)
+		end
 		self:_remove_opened_tab(tab)
 		return true
 	end
@@ -389,14 +393,14 @@ function TheFamilyCardArea:_close_overlay()
 	end
 end
 
-function TheFamilyCardArea:_open_and_highlight(tab)
-	if self:_open(tab) then
+function TheFamilyCardArea:_open_and_highlight(tab, without_callbacks)
+	if self:_open(tab, without_callbacks) then
 		self:_highlight_tab(tab)
 		return true
 	end
 end
-function TheFamilyCardArea:_close_and_unhighlight(tab)
-	if self:_close(tab) then
+function TheFamilyCardArea:_close_and_unhighlight(tab, without_callbacks)
+	if self:_close(tab, without_callbacks) then
 		self:_unhighlight_tab(tab)
 		return true
 	end
