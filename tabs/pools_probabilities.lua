@@ -1,6 +1,9 @@
 TheFamily.own_tabs.pools_probabilities = {
 	keep_shop_slots_in_pool = true,
 
+	edition_probabilities_for = 1,
+	edition_modifiers = { 1, 2, 5 },
+
 	rarities_last_render = 0,
 	editions_last_render = 0,
 	pools_last_render = 0,
@@ -107,6 +110,8 @@ TheFamily.own_tabs.pools_probabilities = {
 	end,
 	get_sorted_editions = function()
 		local editions_list = {}
+		local modifier =
+			TheFamily.own_tabs.pools_probabilities.edition_modifiers[TheFamily.own_tabs.pools_probabilities.edition_probabilities_for]
 		if SMODS and SMODS.Edition then
 			local available_editions = G.P_CENTER_POOLS.Edition
 			local total_weight = 0
@@ -122,11 +127,19 @@ TheFamily.own_tabs.pools_probabilities = {
 					}
 					table.insert(editions_list, v)
 					total_scaled_weight = total_scaled_weight + v.weight
+					if
+						edition.key == "e_negative"
+						and TheFamily.own_tabs.pools_probabilities.edition_probabilities_for ~= 1
+					then
+						local prev = editions_list[index - 1]
+						prev.weight = prev.weight + v.weight
+						v.weight = 0
+					end
 				end
 			end
 			total_weight = total_weight + (total_weight / 4 * 96)
 			for _, v in ipairs(editions_list) do
-				v.rate = v.weight / total_weight
+				v.rate = v.weight / total_weight * modifier
 				v.weight = v.weight / total_scaled_weight
 			end
 		else
@@ -146,6 +159,11 @@ TheFamily.own_tabs.pools_probabilities = {
 				}
 				table.insert(editions_list, v)
 				total_scaled_weight = total_scaled_weight + v.weight
+				if edition == "Negative" and TheFamily.own_tabs.pools_probabilities.edition_probabilities_for ~= 1 then
+					local prev = editions_list[index - 1]
+					prev.weight = prev.weight + v.weight
+					v.weight = 0
+				end
 			end
 			total_weight = total_weight + (total_weight / 4 * 96)
 			for _, v in ipairs(editions_list) do
@@ -889,6 +907,17 @@ TheFamily.own_tabs.pools_probabilities = {
 			},
 			description = {
 				TheFamily.own_tabs.pools_probabilities.get_UI_edition(),
+				{
+
+					create_option_cycle({
+						options = { "Jokers", "Standard Pack", "Illusion voucher" },
+						opt_callback = "thefamily_update_pools_probabilities_edition_for",
+						current_option = TheFamily.own_tabs.pools_probabilities.edition_probabilities_for,
+						colour = G.C.RED,
+						scale = 0.6,
+						w = 4,
+					}),
+				},
 			},
 		}
 	end,
@@ -928,7 +957,7 @@ TheFamily.create_tab({
 	end,
 	update = function(defuninition, card, dt)
 		local now = love.timer.getTime()
-		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.pools_last_render + 1 < now then
+		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.pools_last_render + 3 < now then
 			TheFamily.own_tabs.pools_probabilities.pools_last_render = now
 			defuninition:rerender_popup()
 		end
@@ -954,7 +983,7 @@ TheFamily.create_tab({
 	end,
 	update = function(defuninition, card, dt)
 		local now = love.timer.getTime()
-		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.rarities_last_render + 1 < now then
+		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.rarities_last_render + 3 < now then
 			TheFamily.own_tabs.pools_probabilities.rarities_last_render = now
 			defuninition:rerender_popup()
 		end
@@ -962,7 +991,7 @@ TheFamily.create_tab({
 
 	keep_popup_when_highlighted = true,
 })
-TheFamily.create_tab({
+local edition_tab = TheFamily.create_tab({
 	key = "thefamily_pools_editions",
 	order = 3,
 	group_key = "thefamily_default",
@@ -975,11 +1004,12 @@ TheFamily.create_tab({
 		}
 	end,
 	popup = function(definition, card)
+		TheFamily.own_tabs.pools_probabilities.editions_last_render = love.timer.getTime()
 		return TheFamily.own_tabs.pools_probabilities.create_UI_editions_popup(definition, card)
 	end,
 	update = function(defuninition, card, dt)
 		local now = love.timer.getTime()
-		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.editions_last_render + 1 < now then
+		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.editions_last_render + 3 < now then
 			TheFamily.own_tabs.pools_probabilities.editions_last_render = now
 			defuninition:rerender_popup()
 		end
@@ -987,3 +1017,10 @@ TheFamily.create_tab({
 
 	keep_popup_when_highlighted = true,
 })
+
+--
+
+function G.FUNCS.thefamily_update_pools_probabilities_edition_for(arg)
+	TheFamily.own_tabs.pools_probabilities.edition_probabilities_for = arg.to_key
+	edition_tab:rerender_popup()
+end
