@@ -97,11 +97,66 @@ TheFamily.own_tabs.pools_probabilities = {
 			if a.weight ~= b.weight then
 				return a.weight > b.weight
 			else
-				return a.index > b.index
+				return a.index < b.index
 			end
 		end)
 		return rarities_list
 	end,
+	get_sorted_edition = function()
+		local editions_list = {}
+		if SMODS and SMODS.Edition then
+			local available_editions = G.P_CENTER_POOLS.Edition
+			local total_weight = 0
+			for index, edition in ipairs(available_editions) do
+				if edition.key ~= "e_base" then
+					local v = {
+						key = edition.key,
+						index = index,
+						weight = edition.weight,
+						localized = localize({ set = "Edition", type = "name_text", key = edition.key }),
+					}
+					table.insert(editions_list, v)
+					total_weight = total_weight + v.weight
+				end
+			end
+			local old_total_weight = total_weight
+			total_weight = total_weight + (total_weight / 4 * 96)
+			for _, v in ipairs(editions_list) do
+				v.weight = v.weight / old_total_weight
+				v.rate = G.P_CENTERS[v.key]:get_weight() / total_weight
+			end
+		else
+			local available_editions = { "Foil", "Holographic", "Polychrome", "Negative" }
+			local weights = { 20, 14, 3, 3 }
+			local loc_keys = { "e_foil", "e_holo", "e_polychrome", "e_negative" }
+			local total_weight = 0
+			for index, edition in ipairs(available_editions) do
+				local v = {
+					key = edition,
+					index = index,
+					weight = weights[index],
+					localized = localize({ set = "Edition", type = "name_text", key = loc_keys[index] }),
+				}
+				table.insert(editions_list, v)
+				total_weight = total_weight + v.weight
+			end
+			local old_total_weight = total_weight
+			total_weight = total_weight + (total_weight / 4 * 96)
+			for _, v in ipairs(editions_list) do
+				v.rate = v.weight * G.GAME.edition_rate / total_weight
+				v.weight = v.weight / old_total_weight
+			end
+		end
+		table.sort(editions_list, function(a, b)
+			if a.weight ~= b.weight then
+				return a.weight > b.weight
+			else
+				return a.index < b.index
+			end
+		end)
+		return editions_list
+	end,
+
 	get_UI_rarities = function()
 		local rarities = TheFamily.own_tabs.pools_probabilities.get_sorted_rarities()
 		local result = {
@@ -130,6 +185,9 @@ TheFamily.own_tabs.pools_probabilities = {
 								},
 							},
 						},
+					},
+					{
+						n = G.UIT.C,
 					},
 					{
 						n = G.UIT.C,
@@ -371,8 +429,210 @@ TheFamily.own_tabs.pools_probabilities = {
 		end
 		return result
 	end,
+	get_UI_edition = function()
+		local editions = TheFamily.own_tabs.pools_probabilities.get_sorted_edition()
+		local result = {
+			{
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 2,
+							maxw = 2,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Edition",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Weight",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Rate",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				n = G.UIT.R,
+				config = {
+					minh = 0.05,
+				},
+			},
+		}
+		for _, edition in ipairs(editions) do
+			table.insert(result, {
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 2,
+							maxw = 2,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = { align = "cm" },
+								nodes = {
+									{
+										n = G.UIT.R,
+										config = {
+											align = "cm",
+											colour = G.C.DARK_EDITION,
+											r = 0.1,
+											minw = 2,
+											minh = 0.25,
+											emboss = 0.05,
+											padding = 0.06,
+										},
+										nodes = {
+											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
+											{
+												n = G.UIT.O,
+												config = {
+													object = DynaText({
+														string = edition.localized or "ERROR",
+														colours = { G.C.WHITE },
+														float = true,
+														shadow = true,
+														offset_y = -0.05,
+														silent = true,
+														spacing = 1,
+														scale = 0.25,
+													}),
+												},
+											},
+											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									align = "cm",
+								},
+								nodes = {
+									{
+										n = G.UIT.T,
+										config = {
+											text = string.format("%0.3f%%", edition.weight * 100),
+											colour = G.C.CHIPS,
+											scale = 0.3,
+											align = "cm",
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							align = "cm",
+							maxw = 1,
+							minw = 1,
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									align = "cm",
+								},
+								nodes = {
+									{
+										n = G.UIT.T,
+										config = {
+											text = string.format("%0.3f%%", edition.rate * 100),
+											colour = G.C.CHIPS,
+											scale = 0.3,
+											align = "cm",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+		end
+		return result
+	end,
 
-	create_UI_popup = function(definition, card)
+	create_UI_rarities_popup = function(definition, card)
 		return {
 			description = {
 				TheFamily.own_tabs.pools_probabilities.get_UI_rarities(),
@@ -401,6 +661,13 @@ TheFamily.own_tabs.pools_probabilities = {
 			},
 		}
 	end,
+	create_UI_editions_popup = function(definition, card)
+		return {
+			description = {
+				TheFamily.own_tabs.pools_probabilities.get_UI_edition(),
+			},
+		}
+	end,
 }
 TheFamily.create_tab({
 	key = "thefamily_pools_rarities",
@@ -415,7 +682,25 @@ TheFamily.create_tab({
 		}
 	end,
 	popup = function(definition, card)
-		return TheFamily.own_tabs.pools_probabilities.create_UI_popup(definition, card)
+		return TheFamily.own_tabs.pools_probabilities.create_UI_rarities_popup(definition, card)
+	end,
+
+	keep_popup_when_highlighted = true,
+})
+TheFamily.create_tab({
+	key = "thefamily_pools_editions",
+	order = 1,
+	group_key = "thefamily_default",
+	center = "v_glow_up",
+	type = "switch",
+
+	front_label = function()
+		return {
+			text = "Editions",
+		}
+	end,
+	popup = function(definition, card)
+		return TheFamily.own_tabs.pools_probabilities.create_UI_editions_popup(definition, card)
 	end,
 
 	keep_popup_when_highlighted = true,
