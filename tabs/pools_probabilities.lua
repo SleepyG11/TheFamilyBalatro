@@ -1,7 +1,10 @@
 TheFamily.own_tabs.pools_probabilities = {
 	keep_shop_slots_in_pool = true,
 
-	-- TODO: constant updates when opened
+	rarities_last_render = 0,
+	editions_last_render = 0,
+	pools_last_render = 0,
+
 	get_sorted_rarities = function()
 		local rarities_list = {}
 		if SMODS and SMODS.Rarities then
@@ -102,7 +105,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		end)
 		return rarities_list
 	end,
-	get_sorted_edition = function()
+	get_sorted_editions = function()
 		local editions_list = {}
 		if SMODS and SMODS.Edition then
 			local available_editions = G.P_CENTER_POOLS.Edition
@@ -481,7 +484,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		return result
 	end,
 	get_UI_edition = function()
-		local editions = TheFamily.own_tabs.pools_probabilities.get_sorted_edition()
+		local editions = TheFamily.own_tabs.pools_probabilities.get_sorted_editions()
 		local result = {
 			{
 				n = G.UIT.R,
@@ -920,7 +923,15 @@ TheFamily.create_tab({
 		}
 	end,
 	popup = function(definition, card)
+		TheFamily.own_tabs.pools_probabilities.pools_last_render = love.timer.getTime()
 		return TheFamily.own_tabs.pools_probabilities.create_UI_pools_popup(definition, card)
+	end,
+	update = function(defuninition, card, dt)
+		local now = love.timer.getTime()
+		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.pools_last_render + 1 < now then
+			TheFamily.own_tabs.pools_probabilities.pools_last_render = now
+			defuninition:rerender_popup()
+		end
 	end,
 
 	keep_popup_when_highlighted = true,
@@ -938,7 +949,15 @@ TheFamily.create_tab({
 		}
 	end,
 	popup = function(definition, card)
+		TheFamily.own_tabs.pools_probabilities.rarities_last_render = love.timer.getTime()
 		return TheFamily.own_tabs.pools_probabilities.create_UI_rarities_popup(definition, card)
+	end,
+	update = function(defuninition, card, dt)
+		local now = love.timer.getTime()
+		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.rarities_last_render + 1 < now then
+			TheFamily.own_tabs.pools_probabilities.rarities_last_render = now
+			defuninition:rerender_popup()
+		end
 	end,
 
 	keep_popup_when_highlighted = true,
@@ -957,6 +976,13 @@ TheFamily.create_tab({
 	end,
 	popup = function(definition, card)
 		return TheFamily.own_tabs.pools_probabilities.create_UI_editions_popup(definition, card)
+	end,
+	update = function(defuninition, card, dt)
+		local now = love.timer.getTime()
+		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.editions_last_render + 1 < now then
+			TheFamily.own_tabs.pools_probabilities.editions_last_render = now
+			defuninition:rerender_popup()
+		end
 	end,
 
 	keep_popup_when_highlighted = true,
