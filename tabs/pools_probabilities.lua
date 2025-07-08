@@ -107,44 +107,47 @@ TheFamily.own_tabs.pools_probabilities = {
 		if SMODS and SMODS.Edition then
 			local available_editions = G.P_CENTER_POOLS.Edition
 			local total_weight = 0
+			local total_scaled_weight = 0
 			for index, edition in ipairs(available_editions) do
 				if edition.key ~= "e_base" then
+					total_weight = total_weight + edition.weight
 					local v = {
 						key = edition.key,
 						index = index,
-						weight = edition.weight,
+						weight = edition:get_weight(),
 						localized = localize({ set = "Edition", type = "name_text", key = edition.key }),
 					}
 					table.insert(editions_list, v)
-					total_weight = total_weight + v.weight
+					total_scaled_weight = total_scaled_weight + v.weight
 				end
 			end
-			local old_total_weight = total_weight
 			total_weight = total_weight + (total_weight / 4 * 96)
 			for _, v in ipairs(editions_list) do
-				v.weight = v.weight / old_total_weight
-				v.rate = G.P_CENTERS[v.key]:get_weight() / total_weight
+				v.rate = v.weight / total_weight
+				v.weight = v.weight / total_scaled_weight
 			end
 		else
 			local available_editions = { "Foil", "Holographic", "Polychrome", "Negative" }
 			local weights = { 20, 14, 3, 3 }
 			local loc_keys = { "e_foil", "e_holo", "e_polychrome", "e_negative" }
 			local total_weight = 0
+			local total_scaled_weight = 0
 			for index, edition in ipairs(available_editions) do
+				total_weight = total_weight + weights[index]
+				local scaled_weight = (index == 4 and weights[index]) or weights[index] * G.GAME.edition_rate
 				local v = {
 					key = edition,
 					index = index,
-					weight = weights[index],
+					weight = scaled_weight,
 					localized = localize({ set = "Edition", type = "name_text", key = loc_keys[index] }),
 				}
 				table.insert(editions_list, v)
-				total_weight = total_weight + v.weight
+				total_scaled_weight = total_scaled_weight + v.weight
 			end
-			local old_total_weight = total_weight
 			total_weight = total_weight + (total_weight / 4 * 96)
 			for _, v in ipairs(editions_list) do
-				v.rate = v.weight * G.GAME.edition_rate / total_weight
-				v.weight = v.weight / old_total_weight
+				v.rate = v.weight / total_weight
+				v.weight = v.weight / total_scaled_weight
 			end
 		end
 		table.sort(editions_list, function(a, b)
