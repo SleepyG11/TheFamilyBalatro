@@ -1,0 +1,22 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = -1
+
+[[patches]]
+[patches.module]
+source = 'tabs/index.lua'
+before = 'main.lua'
+name = 'thefamily/tabs'
+
+[[patches]]
+[patches.module]
+source = 'tabs/time_tracker.lua'
+before = 'main.lua'
+name = 'thefamily/tabs/time_tracker'
+
+[[patches]]
+[patches.module]
+source = 'tabs/pools_probabilities.lua'
+before = 'main.lua'
+name = 'thefamily/tabs/pools_probabilities'
