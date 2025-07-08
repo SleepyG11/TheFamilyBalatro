@@ -159,6 +159,54 @@ TheFamily.own_tabs.pools_probabilities = {
 		end)
 		return editions_list
 	end,
+	get_sorted_pools = function()
+		local pools_list = {}
+		local total_weight = G.GAME.joker_rate + G.GAME.playing_card_rate
+		table.insert(pools_list, {
+			key = "Joker",
+			index = 1,
+			localized = localize("k_joker"),
+			badge_colour = G.C.SECONDARY_SET.Joker,
+			weight = G.GAME.joker_rate,
+		})
+		table.insert(pools_list, {
+			key = "Playing",
+			index = 2,
+			localized = localize("k_base_cards"),
+			badge_colour = G.C.SECONDARY_SET.Enhanced,
+			weight = G.GAME.playing_card_rate,
+		})
+		local pools
+		if SMODS and SMODS.ConsumableType then
+			pools = SMODS.ConsumableType.ctype_buffer
+		else
+			pools = { "Spectral", "Tarot", "Planet" }
+		end
+		for index, _pool in ipairs(pools) do
+			local weight = G.GAME[_pool:lower() .. "_rate"]
+			local v = {
+				key = _pool,
+				index = index + 2,
+				localized = localize("k_" .. _pool:lower()),
+				badge_colour = G.C.SECONDARY_SET[_pool],
+				weight = weight,
+			}
+			table.insert(pools_list, v)
+			total_weight = total_weight + weight
+		end
+		for _, v in ipairs(pools_list) do
+			-- v.rate = v.weight / total_weight
+			v.weight = v.weight / total_weight
+		end
+		table.sort(pools_list, function(a, b)
+			if a.weight ~= b.weight then
+				return a.weight > b.weight
+			else
+				return a.index < b.index
+			end
+		end)
+		return pools_list
+	end,
 
 	get_UI_rarities = function()
 		local rarities = TheFamily.own_tabs.pools_probabilities.get_sorted_rarities()
@@ -293,7 +341,7 @@ TheFamily.own_tabs.pools_probabilities = {
 											minw = 2,
 											minh = 0.25,
 											emboss = 0.05,
-											padding = 0.06,
+											padding = 0.075,
 										},
 										nodes = {
 											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
@@ -543,7 +591,7 @@ TheFamily.own_tabs.pools_probabilities = {
 											minw = 2,
 											minh = 0.25,
 											emboss = 0.05,
-											padding = 0.06,
+											padding = 0.075,
 										},
 										nodes = {
 											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
@@ -634,9 +682,169 @@ TheFamily.own_tabs.pools_probabilities = {
 		end
 		return result
 	end,
+	get_UI_pools = function()
+		local pools = TheFamily.own_tabs.pools_probabilities.get_sorted_pools()
+		local result = {
+			{
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 2,
+							maxw = 2,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Card type",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Weight",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				n = G.UIT.R,
+				config = {
+					minh = 0.05,
+				},
+			},
+		}
+		for _, pool in ipairs(pools) do
+			table.insert(result, {
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 2,
+							maxw = 2,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = { align = "cm" },
+								nodes = {
+									{
+										n = G.UIT.R,
+										config = {
+											align = "cm",
+											colour = pool.badge_colour,
+											r = 0.1,
+											minw = 2,
+											minh = 0.25,
+											emboss = 0.05,
+											padding = 0.075,
+										},
+										nodes = {
+											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
+											{
+												n = G.UIT.O,
+												config = {
+													object = DynaText({
+														string = pool.localized or "ERROR",
+														colours = { G.C.WHITE },
+														float = true,
+														shadow = true,
+														offset_y = -0.05,
+														silent = true,
+														spacing = 1,
+														scale = 0.25,
+													}),
+												},
+											},
+											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									align = "cm",
+								},
+								nodes = {
+									{
+										n = G.UIT.T,
+										config = {
+											text = string.format("%0.3f%%", pool.weight * 100),
+											colour = G.C.CHIPS,
+											scale = 0.3,
+											align = "cm",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+		end
+		return result
+	end,
 
 	create_UI_rarities_popup = function(definition, card)
 		return {
+			name = {
+				{
+					n = G.UIT.T,
+					config = {
+						text = "Shop probabilities: Joker rarities",
+						scale = 0.35,
+						colour = G.C.WHITE,
+					},
+				},
+			},
 			description = {
 				TheFamily.own_tabs.pools_probabilities.get_UI_rarities(),
 				{
@@ -666,15 +874,60 @@ TheFamily.own_tabs.pools_probabilities = {
 	end,
 	create_UI_editions_popup = function(definition, card)
 		return {
+			name = {
+				{
+					n = G.UIT.T,
+					config = {
+						text = "Shop probabilities: Editions",
+						scale = 0.35,
+						colour = G.C.WHITE,
+					},
+				},
+			},
 			description = {
 				TheFamily.own_tabs.pools_probabilities.get_UI_edition(),
 			},
 		}
 	end,
+	create_UI_pools_popup = function(definition, card)
+		return {
+			name = {
+				{
+					n = G.UIT.T,
+					config = {
+						text = "Shop probabilities: Card types",
+						scale = 0.35,
+						colour = G.C.WHITE,
+					},
+				},
+			},
+			description = {
+				TheFamily.own_tabs.pools_probabilities.get_UI_pools(),
+			},
+		}
+	end,
 }
 TheFamily.create_tab({
-	key = "thefamily_pools_rarities",
+	key = "thefamily_pools_pools",
 	order = 1,
+	group_key = "thefamily_default",
+	center = "v_overstock_norm",
+	type = "switch",
+
+	front_label = function()
+		return {
+			text = "Card types",
+		}
+	end,
+	popup = function(definition, card)
+		return TheFamily.own_tabs.pools_probabilities.create_UI_pools_popup(definition, card)
+	end,
+
+	keep_popup_when_highlighted = true,
+})
+TheFamily.create_tab({
+	key = "thefamily_pools_rarities",
+	order = 2,
 	group_key = "thefamily_default",
 	center = "v_hone",
 	type = "switch",
@@ -692,7 +945,7 @@ TheFamily.create_tab({
 })
 TheFamily.create_tab({
 	key = "thefamily_pools_editions",
-	order = 1,
+	order = 3,
 	group_key = "thefamily_default",
 	center = "v_glow_up",
 	type = "switch",
