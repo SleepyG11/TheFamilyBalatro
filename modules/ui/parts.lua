@@ -31,14 +31,20 @@ TheFamily.UI.PARTS = {
 
 		return {
 			definition = {
-				n = G.UIT.R,
-				config = {
-					align = "cm",
-					padding = 0.1 * ui_values.scale,
-					r = 0.02 * ui_values.scale,
-					colour = HEX("22222288"),
+				n = G.UIT.ROOT,
+				config = { align = "cm", colour = G.C.CLEAR },
+				nodes = {
+					{
+						n = G.UIT.R,
+						config = {
+							align = "cm",
+							padding = 0.1 * ui_values.scale,
+							r = 0.02 * ui_values.scale,
+							colour = HEX("22222288"),
+						},
+						nodes = content,
+					},
 				},
-				nodes = content,
 			},
 			config = config,
 		}

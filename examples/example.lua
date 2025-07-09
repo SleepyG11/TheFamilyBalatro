@@ -1,5 +1,3 @@
--- Types can be found in types.lua file
-
 TheFamily.create_tab_group({
 	key = "example_vanilla",
 	order = 1,
@@ -126,25 +124,33 @@ TheFamily.create_tab({
 				local info = TheFamily.UI.get_ui_values() -- Function which returns UI varibles like rotation, scale and gap
 				return {
 					definition = {
-						n = G.UIT.R,
-						config = {
-							align = "cm",
-							minh = 0.3 * info.scale,
-							maxh = 1 * info.scale,
-							minw = 0.5 * info.scale,
-							maxw = 1.5 * info.scale,
-							padding = 0.1 * info.scale,
-							r = 0.02 * info.scale,
-							colour = HEX("22222288"),
-							res = 0.5 * info.scale,
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Click me!",
-									colour = G.C.WHITE,
-									scale = 0.4 * info.scale,
+						{
+							n = G.UIT.ROOT,
+							config = { align = "cm", colour = G.C.CLEAR },
+							nodes = {
+								{
+									n = G.UIT.R,
+									config = {
+										align = "cm",
+										minh = 0.3 * info.scale,
+										maxh = 1 * info.scale,
+										minw = 0.5 * info.scale,
+										maxw = 1.5 * info.scale,
+										padding = 0.1 * info.scale,
+										r = 0.02 * info.scale,
+										colour = HEX("22222288"),
+										res = 0.5 * info.scale,
+									},
+									nodes = {
+										{
+											n = G.UIT.T,
+											config = {
+												text = "Click me!",
+												colour = G.C.WHITE,
+												scale = 0.4 * info.scale,
+											},
+										},
+									},
 								},
 							},
 						},

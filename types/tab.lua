@@ -1,0 +1,116 @@
+--- @meta
+
+--- @alias INodeDefinition table
+--- @alias INodeConfig table
+
+--- Determines tab visibility and behaviour.<br>
+--- <br>
+--- `switch` - can be (un)highlighted individually<br>
+--- `overlay` - only one tab with this type can be highlighted at a time<br>
+--- `filler` - blank tab<br>
+--- `separator` - empty space<br>
+--- @alias TheFamilyTabType "switch"|"overlay"|"filler"|"separator"
+
+--- Card which will represent a tab.<br>
+--- <br>
+--- If string passed, card with center from `G.P_CENTERS` will be created.<br>
+--- If function passed, returned card will be used instead. **DO NOT EMPLACE IT**<br>
+--- @alias TheFamilyTabCenterDefinition string | fun(self: TheFamilyTab, area: CardArea): Card
+
+--- Definition of front label which will be displayed on top of card.<br>
+--- Function called one time when card is created. To rerender, use `self:rerender_front_label()`<br>
+--- <br>
+--- If function returns `nil` or table with `remove = true`, front label will be removed.<br>
+--- Otherwise, returned value will be used as config for text node:
+--- ```lua
+--- { n = G.UIT.T, config = <returned value> }
+--- ```
+--- @alias TheFamilyTabFrontLabelDefinition fun(self: TheFamilyTab, card: Card): INodeConfig | { remove: true } | nil
+
+--- Definition of popup which will be displayed when tab's card is hovered.<br>
+--- <br>
+--- Function called every time card is hovered or (un)highlighted. Use `card.highlighted` to determine when tab is selected. To rerender popup, use `self:rerender_popup()`<br>
+--- <br>
+--- If function returns `nil` or table with `remove = true`, popup will be removed.<br>
+--- If returned table have `definition_function`, it will be called without arguments and result will be used for making `UIBox`:
+--- ```lua
+--- UIBox({ definition = <returned value>.definition, config = <returned value>.config })
+--- ```
+--- If returned table contains 'name' or 'description', they will be used to build a popup; expected structure:
+--- ```lua
+--- {
+---     name = { name_node_1, name_node_2, ... },
+---     desciption = {
+---         -- Supports multiboxes (like in SMODS)
+---         -- box 1
+---         { desc_node_1, desc_node_2, ... },
+---         -- box 2
+---         { desc_node_3, desc_node_4, ... },
+---     }
+--- }
+--- ```
+--- @alias TheFamilyTabPopupDefinition fun(self: TheFamilyTab, card: Card): { name?: INodeDefinition[], description?: INodeDefinition[][] } | { definition_function: fun(): { definition: INodeDefinition, config: INodeConfig } } | { remove: true } | nil
+
+--- Definition of alert, a notification on card's corner, which can be used to attach some attention or display some info without needing to open tab.<br>
+--- <br>
+--- Function called every frame card is rendered. Automatically removed or created when needed. To rerender already rendered alert, use `self:rerender_alert()`<br>
+--- <br>
+--- If function returns `nil` or table with `remove = true`, alert will be removed.<br>
+--- If returned table have `definition_function`, it will be called without arguments and result will be used for making `UIBox`:
+--- ```lua
+--- UIBox({ definition = <returned value>.definition, config = <returned value>.config })
+--- ```
+--- Otherwise, returned values used as argument for `create_UIBox_card_alert` function
+--- @alias TheFamilyTabAlertDefinition fun(self: TheFamilyTab, card: Card): table | { definition_function: fun(): { definition: INodeDefinition, config: INodeConfig } } | { remove: true } | nil
+
+--- @class TheFamilyTabOptions: table
+--- @field key string Unique key. To prevent intersections, add prefix
+--- @field group_key string Unique key of group to be assigned for (including prefix)
+--- @field order? number Value user for sorting, from lowest to highest
+--- @field type? TheFamilyTabType
+--- @field keep? boolean Should prevent tab from deselecting when another page is opened
+--- @field front? string Key from `G.P_CARDS` to set card's front
+--- @field center? TheFamilyTabCenterDefinition
+--- @field front_label? TheFamilyTabFrontLabelDefinition
+--- @field popup? TheFamilyTabPopupDefinition
+--- @field alert? TheFamilyTabAlertDefinition
+--- @field keep_popup_when_highlighted? boolean When set to `true` and card is highlighted, popup will stay even if card will be not hovered
+--- @field can_highlight? fun(self: TheFamilyTab, card?: Card): boolean Function which controls can card be highlighted. When value will change to `false`, card will automatically unhighlight. If `keep = true`, callback can be called without card object if tab is selected but not rendered in current page
+--- @field force_highlight? fun(self: TheFamilyTab, card?: Card): boolean Function which controls should card be highlighted. Controlled by `can_highlight()`. Only works for `type = switch`. When value will change to `true`, card will automatically highlight. Callback can be called without card object if tab is selected but not rendered in current page
+--- @field highlight? fun(self: TheFamilyTab, card?: Card) Callback when card is highlighted. Can be called without card object when opens but not rendered in current page
+--- @field unhighlight? fun(self: TheFamilyTab, card?: Card) Callback when card is unhighlighted. Can be called without card object when closes but not rendered in current page
+--- @field click? fun(self: TheFamilyTab, card: Card): boolean Callback when card is clicked. If callback returns `true`, other events will not be fired (ex. card highlight, tab selection)
+--- @field update? fun(self: TheFamilyTab, card?: Card, dt: number) Update function. `dt` affected by game speed. Called for every enabled tab every frame. Callback can be called without card object if tab is not rendered on current page
+--- @field enabled? fun(self: TheFamilyTab): boolean Function which determines can this tab be created.
+
+--- Class which handles all tab's logic and rendering
+--- ```lua
+--- TheFamily.create_tab({
+---     key = "thefamily_example",
+---     group_key = "thefamily_example_group",
+---
+---     center = "j_shortcut",
+---
+---     front_label = function(self, card)
+---         return {
+---             text = "Run info",
+---         }
+---     end,
+---     can_highlight = function(self, card)
+---         return false
+---     end,
+---     click = function(self, card)
+---         G.FUNCS.run_info()
+---         return true
+---     end,
+--- })
+--- ```
+--- @class TheFamilyTab: TheFamilyTabOptions
+--- @field group? TheFamilyGroup
+--- @field is_enabled boolean
+--- @field card? Card Card which represents tab
+--- @field rerender_front_label fun() Function to manually rerender front_label
+--- @field rerender_popup fun() Function to manually rerender popup
+--- @field rerender_alert fun() Function to manually rerender alert
+--- @field open fun(without_callbacks?: boolean) Manually open tab. All checks applied. If `without_callbacks = true`, highlight events will not be fired
+--- @field close fun(without_callbacks?: boolean) Manually close tab. All checks applied. If `without_callbacks = true`, unhighlight events will not be fired
