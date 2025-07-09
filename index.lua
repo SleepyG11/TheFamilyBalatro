@@ -156,6 +156,12 @@ function love.wheelmoved(x, y)
 	end
 end
 
+local start_run_ref = Game.start_run
+function Game:start_run(...)
+	start_run_ref(self, ...)
+	TheFamily.init()
+end
+
 ------------------------------
 
 require("thefamily/tabs")

@@ -67,7 +67,8 @@ TheFamily.create_tab({
 			-- Declare definition function
 			definition_function = function()
 				-- Now we need pass a content which we want to render inside
-				-- Since menu can be positioned or scaled differently, we need get this values to render this popup properly.
+				-- Since menu can be positioned or scaled differently, and because of UI works as it works,
+				-- we need position and scale all manually. Not fun! To do this, get values like scale and angle.
 				local ui_values = TheFamily.UI.get_ui_values()
 
 				local content = {
@@ -88,7 +89,7 @@ TheFamily.create_tab({
 					{
 						n = G.UIT.T,
 						config = {
-							text = " free joker slots",
+							text = " free joker slot" .. (joker_slots_data.free_slots == 1 and "" or "s"),
 							colour = G.C.WHITE,
 							scale = 0.4 * ui_values.scale,
 						},
@@ -103,6 +104,7 @@ TheFamily.create_tab({
 					-- Or, you can render it yourself. Here's how this functions looks like.
 					-- A lot of math and position checks, yea...
 					-- But, it's a full freedom for you!
+					-- Show your UI skills and draw everything you want, or at least everything you can...
 					local config
 					if ui_values.position_on_screen == "right" then
 						config = {
