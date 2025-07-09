@@ -54,6 +54,13 @@ temp_data.tab = TheFamily.create_tab({
 	key = "thefamily_example_cardarea_tab",
 	group_key = "thefamily_example_group",
 
+	-- All previous tabs was not openable, but this one is.
+	-- There's 2 major types of tabs: overlay and switch.
+	-- At the same time only 1 overlay can be opened.
+	-- Switched, in other hand, independent. Let's use it.
+	-- Default value is "overlay" btw.
+	type = "switch",
+
 	-- This time, let's do something different. Let's create own card with edition.
 	-- What about negative Uranus?
 	center = function(self, area)
@@ -161,7 +168,7 @@ temp_data.tab = TheFamily.create_tab({
 							align = "cm",
 						}),
 					},
-					-- You can put here not only text, but any UI elements: Checkboxes, toggles, card areas, anything.
+					-- You can put here not only text, but any UI elements: checkboxes, toggles, card areas, anything.
 					{
 						n = G.UIT.R,
 						config = {
@@ -238,7 +245,6 @@ temp_data.tab = TheFamily.create_tab({
 	end,
 
 	-- Now, opening and closing logic
-	-- This
 	highlight = function(self, card)
 		G.FUNCS.example_open_funny_jokers()
 	end,
