@@ -871,6 +871,18 @@ TheFamily.own_tabs.pools_probabilities = {
 				{
 					{
 						n = G.UIT.R,
+						nodes = TheFamily.UI.localize_text({
+							"{C:inactive}Gray percents represent probability to{}",
+							"{C:inactive}find{} {C:attention}one specific{} {C:inactive}card of this rarity{}",
+						}, {
+							align = "cm",
+							default_col = G.C.UI.TEXT_DARK, -- default value
+						}),
+					},
+				},
+				{
+					{
+						n = G.UIT.R,
 						config = {
 							padding = 0.05,
 							r = 0.1,
