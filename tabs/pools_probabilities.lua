@@ -1,14 +1,19 @@
 TheFamily.own_tabs.pools_probabilities = {
 	keep_shop_slots_in_pool = true,
 
-	edition_probabilities_for = 1,
-	edition_modifiers = { 1, 2, 5 },
+	last_rerender = {
+		Pool = 0,
+		Rarity = 0,
+		Edition = 0,
+	},
+
+	modifier_index = 1,
 
 	rarities_last_render = 0,
 	editions_last_render = 0,
 	pools_last_render = 0,
 
-	get_sorted_rarities = function()
+	get_sorted_rarities = function(self)
 		local rarities_list = {}
 		if SMODS and SMODS.Rarities then
 			-- Taken from SMODS
@@ -35,7 +40,7 @@ TheFamily.own_tabs.pools_probabilities = {
 				local items_left_in_pool = items_in_pool
 				local is_showman_present = next(find_joker("Showman"))
 				local keys_in_shop = {}
-				if TheFamily.own_tabs.pools_probabilities.keep_shop_slots_in_pool then
+				if self.keep_shop_slots_in_pool then
 					if G.shop_jokers then
 						for _, card in ipairs(G.shop_jokers.cards) do
 							keys_in_shop[card.config.center.key] = true
@@ -73,7 +78,7 @@ TheFamily.own_tabs.pools_probabilities = {
 				local items_left_in_pool = items_in_pool
 				local is_showman_present = next(find_joker("Showman"))
 				local keys_in_shop = {}
-				if TheFamily.own_tabs.pools_probabilities.keep_shop_slots_in_pool then
+				if self.keep_shop_slots_in_pool then
 					if G.shop_jokers then
 						for _, card in ipairs(G.shop_jokers.cards) do
 							keys_in_shop[card.config.center.key] = true
@@ -108,79 +113,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		end)
 		return rarities_list
 	end,
-	get_sorted_editions = function()
-		local editions_list = {}
-		local modifier =
-			TheFamily.own_tabs.pools_probabilities.edition_modifiers[TheFamily.own_tabs.pools_probabilities.edition_probabilities_for]
-		if SMODS and SMODS.Edition then
-			local available_editions = G.P_CENTER_POOLS.Edition
-			local total_weight = 0
-			local total_scaled_weight = 0
-			for index, edition in ipairs(available_editions) do
-				if edition.key ~= "e_base" then
-					total_weight = total_weight + edition.weight
-					local v = {
-						key = edition.key,
-						index = index,
-						weight = edition:get_weight(),
-						localized = localize({ set = "Edition", type = "name_text", key = edition.key }),
-					}
-					table.insert(editions_list, v)
-					total_scaled_weight = total_scaled_weight + v.weight
-					if
-						edition.key == "e_negative"
-						and TheFamily.own_tabs.pools_probabilities.edition_probabilities_for ~= 1
-					then
-						local prev = editions_list[index - 1]
-						prev.weight = prev.weight + v.weight
-						v.weight = 0
-					end
-				end
-			end
-			total_weight = total_weight + (total_weight / 4 * 96)
-			for _, v in ipairs(editions_list) do
-				v.rate = v.weight / total_weight * modifier
-				v.weight = v.weight / total_scaled_weight
-			end
-		else
-			local available_editions = { "Foil", "Holographic", "Polychrome", "Negative" }
-			local weights = { 20, 14, 3, 3 }
-			local loc_keys = { "e_foil", "e_holo", "e_polychrome", "e_negative" }
-			local total_weight = 0
-			local total_scaled_weight = 0
-			for index, edition in ipairs(available_editions) do
-				total_weight = total_weight + weights[index]
-				local scaled_weight = (index == 4 and weights[index]) or weights[index] * G.GAME.edition_rate
-				local v = {
-					key = edition,
-					index = index,
-					weight = scaled_weight,
-					localized = localize({ set = "Edition", type = "name_text", key = loc_keys[index] }),
-				}
-				table.insert(editions_list, v)
-				total_scaled_weight = total_scaled_weight + v.weight
-				if edition == "Negative" and TheFamily.own_tabs.pools_probabilities.edition_probabilities_for ~= 1 then
-					local prev = editions_list[index - 1]
-					prev.weight = prev.weight + v.weight
-					v.weight = 0
-				end
-			end
-			total_weight = total_weight + (total_weight / 4 * 96)
-			for _, v in ipairs(editions_list) do
-				v.rate = v.weight / total_weight
-				v.weight = v.weight / total_scaled_weight
-			end
-		end
-		table.sort(editions_list, function(a, b)
-			if a.weight ~= b.weight then
-				return a.weight > b.weight
-			else
-				return a.index < b.index
-			end
-		end)
-		return editions_list
-	end,
-	get_sorted_pools = function()
+	get_sorted_pools = function(self)
 		local pools_list = {}
 		local total_weight = G.GAME.joker_rate + G.GAME.playing_card_rate
 		table.insert(pools_list, {
@@ -229,8 +162,384 @@ TheFamily.own_tabs.pools_probabilities = {
 		return pools_list
 	end,
 
-	get_UI_rarities = function()
-		local rarities = TheFamily.own_tabs.pools_probabilities.get_sorted_rarities()
+	pool_info_for = {
+		Edition = 1,
+		Enhanced = 1,
+	},
+	pool_info = {
+		Edition = {
+			base_item_weight = 1,
+			base_item_rate = 4 / 96,
+			modifiers = { 1, 2, 5 },
+			badge_colour = G.C.DARK_EDITION,
+			get_vanilla = function()
+				return {
+					{
+						key = "Foil",
+						loc_key = "e_foil",
+						weight = 20,
+						scaled_weight = 20 * G.GAME.edition_rate,
+					},
+					{
+						key = "Holographic",
+						loc_key = "e_holo",
+						weight = 14,
+						scaled_weight = 14 * G.GAME.edition_rate,
+					},
+					{
+						key = "Polychrome",
+						loc_key = "e_polychrome",
+						weight = 3,
+						scaled_weight = 3 * G.GAME.edition_rate,
+					},
+					{
+						key = "Negative",
+						loc_key = "e_negative",
+						weight = 3,
+						scaled_weight = 3,
+					},
+				}
+			end,
+		},
+		Enhanced = {
+			base_item_weight = 5,
+			base_item_rate = 40 / 60,
+			modifiers = { 0, 1, 1 },
+			badge_colour = G.C.SECONDARY_SET.Enhanced,
+			get_vanilla = function()
+				return {
+					{
+						key = "Bonus",
+						loc_key = "m_bonus",
+						weight = 5,
+						scaled_weight = 5,
+					},
+					{
+						key = "Mult",
+						loc_key = "m_mult",
+						weight = 5,
+						scaled_weight = 5,
+					},
+					{
+						key = "Wild Card",
+						loc_key = "m_wild",
+						weight = 5,
+						scaled_weight = 5,
+					},
+					{
+						key = "Glass Card",
+						loc_key = "m_glass",
+						weight = 5,
+						scaled_weight = 5,
+					},
+					{
+						key = "Steel Card",
+						loc_key = "m_steel",
+						weight = 5,
+						scaled_weight = 5,
+					},
+					{
+						key = "Stone Card",
+						loc_key = "m_stone",
+						weight = 5,
+						scaled_weight = 5,
+					},
+					{
+						key = "Gold Card",
+						loc_key = "m_gold",
+						weight = 5,
+						scaled_weight = 5,
+					},
+					{
+						key = "Lucky Card",
+						loc_key = "m_lucky",
+						weight = 5,
+						scaled_weight = 5,
+					},
+				}
+			end,
+		},
+		Seal = {
+			base_item_weight = 5,
+			base_item_rate = 2 / 98,
+			-- Third one should be 1, but it's bugged xd
+			modifiers = { 0, 1, 0 },
+
+			get_vanilla = function()
+				return {
+					{
+						key = "Red",
+						loc_key = "Red",
+						weight = 5,
+						scaled_weight = 5,
+						badge_color = G.C.RED,
+					},
+					{
+						key = "Blue",
+						loc_key = "Blue",
+						weight = 5,
+						scaled_weight = 5,
+						badge_color = G.C.BLUE,
+					},
+					{
+						key = "Gold",
+						loc_key = "Gold",
+						weight = 5,
+						badge_colour = G.C.GOLD,
+						scaled_weight = 5,
+					},
+					{
+						key = "Purple",
+						loc_key = "Purple",
+						weight = 5,
+						scaled_weight = 5,
+						badge_color = G.C.PURPLE,
+					},
+				}
+			end,
+		},
+	},
+
+	get_pool_info = function(self, pool)
+		local pool_info = self.pool_info[pool]
+		return {
+			base_item_rate = pool_info.base_item_rate,
+			base_item_weight = pool_info.base_item_weight,
+			modifier = pool_info.modifiers[self.modifier_index] or 1,
+			modifier_index = self.modifier_index,
+			get_vanilla = pool_info.get_vanilla,
+			badge_colour = pool_info.badge_colour,
+		}
+	end,
+
+	get_sorted_pool = function(self, pool)
+		local items_list = {}
+		local pool_info = self:get_pool_info(pool)
+		if SMODS then
+			local available_items = G.P_CENTER_POOLS[pool]
+			local total_weight = 0
+			local total_scaled_weight = 0
+			for index, item in ipairs(available_items) do
+				local should_skip = pool == "Edition" and item.key == "e_base"
+				if not should_skip then
+					total_weight = total_weight + (item.weight or pool_info.base_item_weight)
+					local localized = ""
+					if pool == "Seal" then
+						localized = localize({ set = "Other", type = "name_text", key = item.key:lower() .. "_seal" })
+					else
+						localized = localize({ set = pool, type = "name_text", key = item.key })
+					end
+					local v = {
+						key = item.key,
+						index = index,
+						weight = item.get_weight and item:get_weight() or item.weight or pool_info.base_item_weight,
+						localized = localized,
+						badge_colour = item.badge_colour or pool_info.badge_colour,
+					}
+					table.insert(items_list, v)
+					total_scaled_weight = total_scaled_weight + v.weight
+					if pool == "Edition" and item.key == "e_negative" and pool_info.modifier_index ~= 1 then
+						local prev = items_list[index - 1]
+						prev.weight = prev.weight + v.weight
+						v.weight = 0
+					end
+				end
+			end
+			total_weight = total_weight + (total_weight / 4 * 96)
+			for _, v in ipairs(items_list) do
+				v.rate = v.weight / total_weight * pool_info.modifier
+				v.weight = v.weight / total_scaled_weight
+			end
+		else
+			local available_items = pool_info.get_vanilla()
+			local total_weight = 0
+			local total_scaled_weight = 0
+			for index, item in ipairs(available_items) do
+				total_weight = total_weight + item.weight
+				local localized = ""
+				if pool == "Seal" then
+					localized = localize({ set = "Other", type = "name_text", key = item.key:lower() .. "_seal" })
+				else
+					localized = localize({ set = pool, type = "name_text", key = item.key })
+				end
+				local v = {
+					key = item.key,
+					index = index,
+					weight = item.scaled_weight,
+					localized = localized,
+					badge_colour = item.badge_colour or pool_info.badge_colour,
+				}
+				table.insert(items_list, v)
+				total_scaled_weight = total_scaled_weight + v.weight
+				if pool == "Edition" and item.key == "e_negative" and pool_info.modifier_index ~= 1 then
+					local prev = items_list[index - 1]
+					prev.weight = prev.weight + v.weight
+					v.weight = 0
+				end
+			end
+		end
+		table.sort(items_list, function(a, b)
+			if a.weight ~= b.weight then
+				return a.weight > b.weight
+			else
+				return a.index < b.index
+			end
+		end)
+		return items_list
+	end,
+
+	get_UI_pools = function(self)
+		local pools = self:get_sorted_pools()
+		local result = {
+			{
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 2,
+							maxw = 2,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Card type",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Weight",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				n = G.UIT.R,
+				config = {
+					minh = 0.05,
+				},
+			},
+		}
+		for _, pool in ipairs(pools) do
+			table.insert(result, {
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 2,
+							maxw = 2,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = { align = "cm" },
+								nodes = {
+									{
+										n = G.UIT.R,
+										config = {
+											align = "cm",
+											colour = pool.badge_colour,
+											r = 0.1,
+											minw = 2,
+											minh = 0.25,
+											emboss = 0.05,
+											padding = 0.075,
+										},
+										nodes = {
+											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
+											{
+												n = G.UIT.O,
+												config = {
+													object = DynaText({
+														string = pool.localized or "ERROR",
+														colours = { G.C.WHITE },
+														float = true,
+														shadow = true,
+														offset_y = -0.05,
+														silent = true,
+														spacing = 1,
+														scale = 0.25,
+													}),
+												},
+											},
+											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									align = "cm",
+								},
+								nodes = {
+									{
+										n = G.UIT.T,
+										config = {
+											text = string.format("%0.3f%%", pool.weight * 100),
+											colour = G.C.CHIPS,
+											scale = 0.3,
+											align = "cm",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+		end
+		return result
+	end,
+	get_UI_rarities = function(self)
+		local rarities = self:get_sorted_rarities()
 		local result = {
 			{
 				n = G.UIT.R,
@@ -501,8 +810,8 @@ TheFamily.own_tabs.pools_probabilities = {
 		end
 		return result
 	end,
-	get_UI_edition = function()
-		local editions = TheFamily.own_tabs.pools_probabilities.get_sorted_editions()
+	get_UI_pool = function(self, pool, first_column)
+		local editions = self:get_sorted_pool(pool)
 		local result = {
 			{
 				n = G.UIT.R,
@@ -522,7 +831,7 @@ TheFamily.own_tabs.pools_probabilities = {
 							{
 								n = G.UIT.T,
 								config = {
-									text = "Edition",
+									text = first_column,
 									scale = 0.3,
 									colour = G.C.UI.TEXT_DARK,
 									align = "cm",
@@ -607,7 +916,7 @@ TheFamily.own_tabs.pools_probabilities = {
 										n = G.UIT.R,
 										config = {
 											align = "cm",
-											colour = G.C.DARK_EDITION,
+											colour = edition.badge_colour,
 											r = 0.1,
 											minw = 2,
 											minh = 0.25,
@@ -703,158 +1012,25 @@ TheFamily.own_tabs.pools_probabilities = {
 		end
 		return result
 	end,
-	get_UI_pools = function()
-		local pools = TheFamily.own_tabs.pools_probabilities.get_sorted_pools()
-		local result = {
-			{
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
-					{
-						n = G.UIT.C,
-						config = {
-							minw = 2,
-							maxw = 2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Card type",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1,
-							minw = 1,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Weight",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
+
+	create_UI_pools_popup = function(self, definition, card)
+		return {
+			name = {
+				{
+					n = G.UIT.T,
+					config = {
+						text = "Shop probabilities: Card types",
+						scale = 0.35,
+						colour = G.C.WHITE,
 					},
 				},
 			},
-			{
-				n = G.UIT.R,
-				config = {
-					minh = 0.05,
-				},
+			description = {
+				self:get_UI_pools(),
 			},
 		}
-		for _, pool in ipairs(pools) do
-			table.insert(result, {
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
-					{
-						n = G.UIT.C,
-						config = {
-							minw = 2,
-							maxw = 2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.R,
-								config = { align = "cm" },
-								nodes = {
-									{
-										n = G.UIT.R,
-										config = {
-											align = "cm",
-											colour = pool.badge_colour,
-											r = 0.1,
-											minw = 2,
-											minh = 0.25,
-											emboss = 0.05,
-											padding = 0.075,
-										},
-										nodes = {
-											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
-											{
-												n = G.UIT.O,
-												config = {
-													object = DynaText({
-														string = pool.localized or "ERROR",
-														colours = { G.C.WHITE },
-														float = true,
-														shadow = true,
-														offset_y = -0.05,
-														silent = true,
-														spacing = 1,
-														scale = 0.25,
-													}),
-												},
-											},
-											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
-										},
-									},
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1,
-							minw = 1,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("%0.3f%%", pool.weight * 100),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			})
-		end
-		return result
 	end,
-
-	create_UI_rarities_popup = function(definition, card)
+	create_UI_rarities_popup = function(self, definition, card)
 		return {
 			name = {
 				{
@@ -867,7 +1043,7 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			},
 			description = {
-				TheFamily.own_tabs.pools_probabilities.get_UI_rarities(),
+				self:get_UI_rarities(),
 				{
 					{
 						n = G.UIT.R,
@@ -905,26 +1081,25 @@ TheFamily.own_tabs.pools_probabilities = {
 			},
 		}
 	end,
-	create_UI_editions_popup = function(definition, card)
+	create_UI_pool_popup = function(self, definition, card, pool, title, first_column)
 		return {
 			name = {
 				{
 					n = G.UIT.T,
 					config = {
-						text = "Shop probabilities: Editions",
+						text = title,
 						scale = 0.35,
 						colour = G.C.WHITE,
 					},
 				},
 			},
 			description = {
-				TheFamily.own_tabs.pools_probabilities.get_UI_edition(),
+				self:get_UI_pool(pool, first_column),
 				{
-
 					create_option_cycle({
-						options = { "Jokers", "Standard Pack", "Illusion voucher" },
-						opt_callback = "thefamily_update_pools_probabilities_edition_for",
-						current_option = TheFamily.own_tabs.pools_probabilities.edition_probabilities_for,
+						options = { "Shop", "Standard Pack", "Illusion voucher" },
+						opt_callback = "thefamily_update_pools_modifier_index",
+						current_option = self.modifier_index,
 						colour = G.C.RED,
 						scale = 0.6,
 						w = 4,
@@ -933,106 +1108,184 @@ TheFamily.own_tabs.pools_probabilities = {
 			},
 		}
 	end,
-	create_UI_pools_popup = function(definition, card)
-		return {
-			name = {
-				{
-					n = G.UIT.T,
-					config = {
-						text = "Shop probabilities: Card types",
-						scale = 0.35,
-						colour = G.C.WHITE,
-					},
-				},
-			},
-			description = {
-				TheFamily.own_tabs.pools_probabilities.get_UI_pools(),
-			},
-		}
-	end,
+
+	tabs = {
+		Pool = TheFamily.create_tab({
+			key = "thefamily_pools_pools",
+			order = 1,
+			group_key = "thefamily_default",
+			center = "v_overstock_norm",
+			type = "switch",
+
+			front_label = function()
+				return {
+					text = "Card types",
+				}
+			end,
+			popup = function(definition, card)
+				TheFamily.own_tabs.pools_probabilities.last_rerender.Pool = love.timer.getTime()
+				return TheFamily.own_tabs.pools_probabilities:create_UI_pools_popup(definition, card)
+			end,
+			update = function(definition, card, dt)
+				local now = love.timer.getTime()
+				if
+					card
+					and card.children.popup
+					and TheFamily.own_tabs.pools_probabilities.last_rerender.Pool + 3 < now
+				then
+					TheFamily.own_tabs.pools_probabilities.last_rerender.Pool = now
+					definition:rerender_popup()
+				end
+			end,
+
+			keep_popup_when_highlighted = true,
+		}),
+		Rarity = TheFamily.create_tab({
+			key = "thefamily_pools_rarities",
+			order = 2,
+			group_key = "thefamily_default",
+			center = "v_hone",
+			type = "switch",
+
+			front_label = function()
+				return {
+					text = "Rarities",
+				}
+			end,
+			popup = function(definition, card)
+				TheFamily.own_tabs.pools_probabilities.last_rerender.Rarity = love.timer.getTime()
+				return TheFamily.own_tabs.pools_probabilities:create_UI_rarities_popup(definition, card)
+			end,
+			update = function(defuninition, card, dt)
+				local now = love.timer.getTime()
+				if
+					card
+					and card.children.popup
+					and TheFamily.own_tabs.pools_probabilities.last_rerender.Rarity + 3 < now
+				then
+					TheFamily.own_tabs.pools_probabilities.last_rerender.Rarity = now
+					defuninition:rerender_popup()
+				end
+			end,
+
+			keep_popup_when_highlighted = true,
+		}),
+		Enhanced = TheFamily.create_tab({
+			key = "thefamily_pools_enhanced",
+			order = 3,
+			group_key = "thefamily_default",
+			center = "v_tarot_tycoon",
+			type = "switch",
+
+			front_label = function()
+				return {
+					text = "Enhancements",
+				}
+			end,
+			popup = function(definition, card)
+				TheFamily.own_tabs.pools_probabilities.last_rerender.Enhanced = love.timer.getTime()
+				return TheFamily.own_tabs.pools_probabilities:create_UI_pool_popup(
+					definition,
+					card,
+					"Enhanced",
+					"Shop probabilities: Enhancements",
+					"Enhancement"
+				)
+			end,
+			update = function(defuninition, card, dt)
+				local now = love.timer.getTime()
+				if
+					card
+					and card.children.popup
+					and TheFamily.own_tabs.pools_probabilities.last_rerender.Enhanced + 3 < now
+				then
+					TheFamily.own_tabs.pools_probabilities.last_rerender.Enhanced = now
+					defuninition:rerender_popup()
+				end
+			end,
+
+			keep_popup_when_highlighted = true,
+		}),
+		Seal = TheFamily.create_tab({
+			key = "thefamily_pools_seal",
+			order = 4,
+			group_key = "thefamily_default",
+			center = "v_illusion",
+			type = "switch",
+
+			front_label = function()
+				return {
+					text = "Seals",
+				}
+			end,
+			popup = function(definition, card)
+				TheFamily.own_tabs.pools_probabilities.last_rerender.Seal = love.timer.getTime()
+				return TheFamily.own_tabs.pools_probabilities:create_UI_pool_popup(
+					definition,
+					card,
+					"Seal",
+					"Shop probabilities: Seals",
+					"Seal"
+				)
+			end,
+			update = function(defuninition, card, dt)
+				local now = love.timer.getTime()
+				if
+					card
+					and card.children.popup
+					and TheFamily.own_tabs.pools_probabilities.last_rerender.Seal + 3 < now
+				then
+					TheFamily.own_tabs.pools_probabilities.last_rerender.Seal = now
+					defuninition:rerender_popup()
+				end
+			end,
+
+			keep_popup_when_highlighted = true,
+		}),
+		Edition = TheFamily.create_tab({
+			key = "thefamily_pools_editions",
+			order = 5,
+			group_key = "thefamily_default",
+			center = "v_glow_up",
+			type = "switch",
+
+			front_label = function()
+				return {
+					text = "Editions",
+				}
+			end,
+			popup = function(definition, card)
+				TheFamily.own_tabs.pools_probabilities.last_rerender.Edition = love.timer.getTime()
+				return TheFamily.own_tabs.pools_probabilities:create_UI_pool_popup(
+					definition,
+					card,
+					"Edition",
+					"Shop probabilities: Editions",
+					"Edition"
+				)
+			end,
+			update = function(defuninition, card, dt)
+				local now = love.timer.getTime()
+				if
+					card
+					and card.children.popup
+					and TheFamily.own_tabs.pools_probabilities.last_rerender.Edition + 3 < now
+				then
+					TheFamily.own_tabs.pools_probabilities.last_rerender.Edition = now
+					defuninition:rerender_popup()
+				end
+			end,
+
+			keep_popup_when_highlighted = true,
+		}),
+	},
 }
-TheFamily.create_tab({
-	key = "thefamily_pools_pools",
-	order = 1,
-	group_key = "thefamily_default",
-	center = "v_overstock_norm",
-	type = "switch",
-
-	front_label = function()
-		return {
-			text = "Card types",
-		}
-	end,
-	popup = function(definition, card)
-		TheFamily.own_tabs.pools_probabilities.pools_last_render = love.timer.getTime()
-		return TheFamily.own_tabs.pools_probabilities.create_UI_pools_popup(definition, card)
-	end,
-	update = function(defuninition, card, dt)
-		local now = love.timer.getTime()
-		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.pools_last_render + 3 < now then
-			TheFamily.own_tabs.pools_probabilities.pools_last_render = now
-			defuninition:rerender_popup()
-		end
-	end,
-
-	keep_popup_when_highlighted = true,
-})
-TheFamily.create_tab({
-	key = "thefamily_pools_rarities",
-	order = 2,
-	group_key = "thefamily_default",
-	center = "v_hone",
-	type = "switch",
-
-	front_label = function()
-		return {
-			text = "Rarities",
-		}
-	end,
-	popup = function(definition, card)
-		TheFamily.own_tabs.pools_probabilities.rarities_last_render = love.timer.getTime()
-		return TheFamily.own_tabs.pools_probabilities.create_UI_rarities_popup(definition, card)
-	end,
-	update = function(defuninition, card, dt)
-		local now = love.timer.getTime()
-		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.rarities_last_render + 3 < now then
-			TheFamily.own_tabs.pools_probabilities.rarities_last_render = now
-			defuninition:rerender_popup()
-		end
-	end,
-
-	keep_popup_when_highlighted = true,
-})
-local edition_tab = TheFamily.create_tab({
-	key = "thefamily_pools_editions",
-	order = 3,
-	group_key = "thefamily_default",
-	center = "v_glow_up",
-	type = "switch",
-
-	front_label = function()
-		return {
-			text = "Editions",
-		}
-	end,
-	popup = function(definition, card)
-		TheFamily.own_tabs.pools_probabilities.editions_last_render = love.timer.getTime()
-		return TheFamily.own_tabs.pools_probabilities.create_UI_editions_popup(definition, card)
-	end,
-	update = function(defuninition, card, dt)
-		local now = love.timer.getTime()
-		if card and card.children.popup and TheFamily.own_tabs.pools_probabilities.editions_last_render + 3 < now then
-			TheFamily.own_tabs.pools_probabilities.editions_last_render = now
-			defuninition:rerender_popup()
-		end
-	end,
-
-	keep_popup_when_highlighted = true,
-})
 
 --
 
-function G.FUNCS.thefamily_update_pools_probabilities_edition_for(arg)
-	TheFamily.own_tabs.pools_probabilities.edition_probabilities_for = arg.to_key
-	edition_tab:rerender_popup()
+function G.FUNCS.thefamily_update_pools_modifier_index(arg)
+	TheFamily.own_tabs.pools_probabilities.modifier_index = arg.to_key
+	for pool, tab in pairs(TheFamily.own_tabs.pools_probabilities.tabs) do
+		tab:rerender_popup()
+	end
 end
