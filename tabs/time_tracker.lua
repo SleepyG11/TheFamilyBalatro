@@ -177,6 +177,7 @@ TheFamily.own_tabs.time_tracker = {
 		}
 	end,
 }
+
 TheFamily.create_tab({
 	key = "thefamily_time",
 	order = 0,
