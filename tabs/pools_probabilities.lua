@@ -46,6 +46,16 @@ TheFamily.own_tabs.pools_probabilities = {
 							keys_in_shop[card.config.center.key] = true
 						end
 					end
+					if G.shop_vouchers then
+						for _, card in ipairs(G.shop_vouchers.cards) do
+							keys_in_shop[card.config.center.key] = true
+						end
+					end
+					if G.shop_booster then
+						for _, card in ipairs(G.shop_booster.cards) do
+							keys_in_shop[card.config.center.key] = true
+						end
+					end
 				end
 				local showman_check = SMODS.showman or function(key)
 					return is_showman_present
@@ -81,6 +91,16 @@ TheFamily.own_tabs.pools_probabilities = {
 				if self.keep_shop_slots_in_pool then
 					if G.shop_jokers then
 						for _, card in ipairs(G.shop_jokers.cards) do
+							keys_in_shop[card.config.center.key] = true
+						end
+					end
+					if G.shop_vouchers then
+						for _, card in ipairs(G.shop_vouchers.cards) do
+							keys_in_shop[card.config.center.key] = true
+						end
+					end
+					if G.shop_booster then
+						for _, card in ipairs(G.shop_booster.cards) do
 							keys_in_shop[card.config.center.key] = true
 						end
 					end
