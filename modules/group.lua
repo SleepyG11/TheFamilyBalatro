@@ -31,7 +31,7 @@ function TheFamilyGroup:init(params)
 	end
 end
 
-function TheFamilyGroup:add_tab(tab)
+function TheFamilyGroup:_add_tab(tab)
 	table.insert(self.tabs.list, tab)
 	self.tabs.dictionary[tab.key] = tab
 end

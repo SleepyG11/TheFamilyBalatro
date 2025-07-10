@@ -194,7 +194,7 @@ function TheFamilyCardArea:set_ranks()
 	end
 end
 function TheFamilyCardArea:emplace(card)
-	if not card then
+	if TheFamily.__prevent_used_jokers or not card then
 		return
 	end
 
@@ -220,7 +220,7 @@ function TheFamilyCardArea:emplace(card)
 	self:set_card_position(card, self.__emplace_index or #self.cards, true)
 end
 function TheFamilyCardArea:replace(card, replace_index)
-	if not card then
+	if TheFamily.__prevent_used_jokers or not card then
 		return
 	end
 
@@ -366,10 +366,10 @@ function TheFamilyCardArea:_open(tab, without_callbacks)
 		if tab.type == "overlay" and not self:_close_overlay() then
 			return
 		end
+		self:_add_opened_tab(tab)
 		if not without_callbacks then
 			tab:highlight(tab.card)
 		end
-		self:_add_opened_tab(tab)
 		return true
 	end
 end
@@ -378,10 +378,10 @@ function TheFamilyCardArea:_close(tab, without_callbacks)
 		if not self:_is_tab_opened(tab) or not tab:_can_unhighlight() then
 			return
 		end
+		self:_remove_opened_tab(tab)
 		if not without_callbacks then
 			tab:unhighlight(tab.card)
 		end
-		self:_remove_opened_tab(tab)
 		return true
 	end
 end
@@ -598,6 +598,9 @@ function TheFamilyCardArea:create_page_cards()
 				end
 			end
 		end
+
+		EMPTY(self.rendered_tabs.dictionary)
+
 		for i = 1, #tabs_to_render do
 			self.rendered_tabs.dictionary[tabs_to_render[i].key] = tabs_to_render[i]
 			tabs_to_render[i]:create_card(i + 2)

@@ -43,7 +43,7 @@ function TheFamilyTab:init(params)
 		local group = TheFamily.tab_groups.dictionary[self.group_key]
 		if group then
 			self.group = group
-			group:add_tab(self)
+			group:_add_tab(self)
 		else
 			self.group = nil
 		end
@@ -241,12 +241,15 @@ function TheFamilyTab:render_front_label()
 	if not self.card or self.card.REMOVED then
 		return
 	end
-	local front_label_result = self:front_label(self.card)
-	if not front_label_result or type(front_label_result) ~= "table" or front_label_result.remove then
-		self:remove_front_label()
+	if self.card.thefamily_front_label_checked then
 		return
 	end
+	self.card.thefamily_front_label_checked = true
 	if self.card.children.front_label then
+		return
+	end
+	local front_label_result = self:front_label(self.card)
+	if not front_label_result or type(front_label_result) ~= "table" or front_label_result.remove then
 		return
 	end
 
@@ -337,37 +340,43 @@ function TheFamilyTab:render_alert()
 	end
 	alert = alert
 		or {
-			n = G.UIT.R,
-			config = {
-				align = "cm",
-				r = 0.15 * ui_values.scale,
-				minw = 0.42 * ui_values.scale,
-				minh = 0.42 * ui_values.scale,
-				colour = alert_result.no_bg and G.C.CLEAR
-					or alert_result.bg_col
-					or (alert_result.red_bad and darken(G.C.RED, 0.1) or G.C.RED),
-				draw_layer = 1,
-				emboss = 0.05,
-				refresh_movement = true,
-			},
+			n = G.UIT.ROOT,
+			config = { colour = G.C.CLEAR, align = "cm" },
 			nodes = {
 				{
-					n = G.UIT.O,
+					n = G.UIT.R,
 					config = {
-						object = DynaText({
-							string = alert_result.text or "!",
-							colours = { G.C.WHITE },
-							shadow = true,
-							rotate = true,
-							H_offset = alert_result.y_offset or 0,
-							bump_rate = alert_result.bump_rate or 3,
-							bump_amount = alert_result.bump_amount or 3,
-							bump = true,
-							maxw = alert_result.maxw,
-							text_rot = alert_result.text_rot or 0.2,
-							spacing = 3 * (alert_result.scale or 1) * ui_values.scale,
-							scale = (alert_result.scale or 0.48) * ui_values.scale,
-						}),
+						align = "cm",
+						r = 0.15 * ui_values.scale,
+						minw = 0.42 * ui_values.scale,
+						minh = 0.42 * ui_values.scale,
+						colour = alert_result.no_bg and G.C.CLEAR
+							or alert_result.bg_col
+							or (alert_result.red_bad and darken(G.C.RED, 0.1) or G.C.RED),
+						draw_layer = 1,
+						emboss = 0.05,
+						refresh_movement = true,
+					},
+					nodes = {
+						{
+							n = G.UIT.O,
+							config = {
+								object = DynaText({
+									string = alert_result.text or "!",
+									colours = { G.C.WHITE },
+									shadow = true,
+									rotate = true,
+									H_offset = alert_result.y_offset or 0,
+									bump_rate = alert_result.bump_rate or 3,
+									bump_amount = alert_result.bump_amount or 3,
+									bump = true,
+									maxw = alert_result.maxw,
+									text_rot = alert_result.text_rot or 0.2,
+									spacing = 3 * (alert_result.scale or 1) * ui_values.scale,
+									scale = (alert_result.scale or 0.48) * ui_values.scale,
+								}),
+							},
+						},
 					},
 				},
 			},
@@ -406,12 +415,17 @@ function TheFamilyTab:render_alert()
 	})
 	result_config.parent = self.card
 
-	local box = UIBox({
-		definition = {
+	if alert.n ~= G.UIT.ROOT then
+		alert = {
 			n = G.UIT.ROOT,
-			config = { align = "cm", colour = G.C.CLEAR, refresh_movement = true },
-			nodes = { alert },
-		},
+			config = { colour = G.C.CLEAR, aligm = "cm" },
+			nodes = {
+				alert,
+			},
+		}
+	end
+	local box = UIBox({
+		definition = alert,
 		config = result_config,
 		T = {
 			r = 0,
@@ -555,6 +569,7 @@ function TheFamilyTab:render_popup()
 end
 
 function TheFamilyTab:rerender_front_label()
+	self.card.thefamily_front_label_checked = nil
 	self:remove_front_label()
 	self:render_front_label()
 end

@@ -1,0 +1,3 @@
+-- In addition to API, TheFamily mod provides few own tabs for various things.
+-- Can be useful to check them out too.
+-- You can find them in `tabs` folder.
