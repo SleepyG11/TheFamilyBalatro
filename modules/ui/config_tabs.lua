@@ -10,7 +10,7 @@ TheFamily.UI.get_config_tab_overall = function()
 		),
 		TheFamily.UI.PARTS.create_option_cycle(
 			"Position on screen",
-			{ "Left", "Right" },
+			{ "Right", "Left" },
 			TheFamily.cc.position_on_screen,
 			"thefamily_change_screen_position"
 		),
