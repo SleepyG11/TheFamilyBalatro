@@ -598,6 +598,9 @@ function TheFamilyCardArea:create_page_cards()
 				end
 			end
 		end
+
+		EMPTY(self.rendered_tabs.dictionary)
+
 		for i = 1, #tabs_to_render do
 			self.rendered_tabs.dictionary[tabs_to_render[i].key] = tabs_to_render[i]
 			tabs_to_render[i]:create_card(i + 2)

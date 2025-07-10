@@ -1,5 +1,5 @@
 TheFamily = setmetatable({
-	version = "0.1.1b",
+	version = "0.1.1c",
 }, {})
 
 require("thefamily/utils")
