@@ -121,14 +121,14 @@ TheFamily.own_tabs.pools_probabilities = {
 						loc_key = "Red",
 						weight = 5,
 						scaled_weight = 5,
-						badge_color = G.C.RED,
+						badge_colour = G.C.RED,
 					},
 					{
 						key = "Blue",
 						loc_key = "Blue",
 						weight = 5,
 						scaled_weight = 5,
-						badge_color = G.C.BLUE,
+						badge_colour = G.C.BLUE,
 					},
 					{
 						key = "Gold",
@@ -142,7 +142,7 @@ TheFamily.own_tabs.pools_probabilities = {
 						loc_key = "Purple",
 						weight = 5,
 						scaled_weight = 5,
-						badge_color = G.C.PURPLE,
+						badge_colour = G.C.PURPLE,
 					},
 				}
 			end,
@@ -315,7 +315,6 @@ TheFamily.own_tabs.pools_probabilities = {
 			total_weight = total_weight + weight
 		end
 		for _, v in ipairs(pools_list) do
-			-- v.rate = v.weight / total_weight
 			v.weight = total_weight == 0 and 0 or v.weight / total_weight
 		end
 		table.sort(pools_list, function(a, b)
@@ -376,7 +375,7 @@ TheFamily.own_tabs.pools_probabilities = {
 				if pool == "Seal" then
 					localized = localize({ set = "Other", type = "name_text", key = item.key:lower() .. "_seal" })
 				else
-					localized = localize({ set = pool, type = "name_text", key = item.key })
+					localized = localize({ set = pool, type = "name_text", key = item.loc_key })
 				end
 				local v = {
 					key = item.key,
@@ -392,6 +391,10 @@ TheFamily.own_tabs.pools_probabilities = {
 					prev.weight = prev.weight + v.weight
 					v.weight = 0
 				end
+			end
+			for _, v in ipairs(items_list) do
+				v.rate = total_weight == 0 and 0 or v.weight / total_weight * pool_info.modifier
+				v.weight = total_scaled_weight == 0 and 0 or v.weight / total_scaled_weight
 			end
 		end
 		table.sort(items_list, function(a, b)
