@@ -5,182 +5,10 @@ TheFamily.own_tabs.pools_probabilities = {
 		Pool = 0,
 		Rarity = 0,
 		Edition = 0,
+		Booster = 0,
 	},
 
 	modifier_index = 1,
-
-	rarities_last_render = 0,
-	editions_last_render = 0,
-	pools_last_render = 0,
-
-	get_sorted_rarities = function(self)
-		local rarities_list = {}
-		if SMODS and SMODS.Rarities then
-			-- Taken from SMODS
-			local available_rarities = copy_table(SMODS.ObjectTypes["Joker"].rarities)
-			local total_weight = 0
-			for _, v in ipairs(available_rarities) do
-				v.mod = G.GAME[tostring(v.key):lower() .. "_mod"] or 1
-				if
-					SMODS.Rarities[v.key]
-					and SMODS.Rarities[v.key].get_weight
-					and type(SMODS.Rarities[v.key].get_weight) == "function"
-				then
-					v.weight = SMODS.Rarities[v.key]:get_weight(v.weight, SMODS.ObjectTypes["Joker"])
-				end
-				v.weight = v.weight * v.mod
-				total_weight = total_weight + v.weight
-			end
-			for index, v in ipairs(available_rarities) do
-				v.weight = v.weight / total_weight
-				local rarity = SMODS.Rarities[v.key]
-				local vanilla_rarities = { ["Common"] = 1, ["Uncommon"] = 2, ["Rare"] = 3, ["Legendary"] = 4 }
-				local pool = G.P_JOKER_RARITY_POOLS[vanilla_rarities[rarity.key] or rarity.key]
-				local items_in_pool = #pool
-				local items_left_in_pool = items_in_pool
-				local is_showman_present = next(find_joker("Showman"))
-				local keys_in_shop = {}
-				if self.keep_shop_slots_in_pool then
-					if G.shop_jokers then
-						for _, card in ipairs(G.shop_jokers.cards) do
-							keys_in_shop[card.config.center.key] = true
-						end
-					end
-					if G.shop_vouchers then
-						for _, card in ipairs(G.shop_vouchers.cards) do
-							keys_in_shop[card.config.center.key] = true
-						end
-					end
-					if G.shop_booster then
-						for _, card in ipairs(G.shop_booster.cards) do
-							keys_in_shop[card.config.center.key] = true
-						end
-					end
-				end
-				local showman_check = SMODS.showman or function(key)
-					return is_showman_present
-				end
-				for _, v in ipairs(pool) do
-					if
-						not v.unlocked
-						or (G.GAME.used_jokers[v.key] and not keys_in_shop[v.key] and not showman_check(v.key))
-					then
-						items_left_in_pool = items_left_in_pool - 1
-					end
-				end
-				if rarity then
-					table.insert(rarities_list, {
-						key = rarity.key,
-						localized = SMODS.Rarity:get_rarity_badge(v.key),
-						badge_colour = rarity.badge_colour,
-						weight = v.weight,
-						items_count = #G.P_JOKER_RARITY_POOLS[vanilla_rarities[rarity.key] or rarity.key],
-						items_left = items_left_in_pool,
-						index = index,
-					})
-				end
-			end
-		else
-			local weights = { 0.7, 0.25, 0.05, 0 }
-			for i, key in ipairs({ "Common", "Uncommon", "Rare" }) do
-				local pool = G.P_JOKER_RARITY_POOLS[i]
-				local items_in_pool = #pool
-				local items_left_in_pool = items_in_pool
-				local is_showman_present = next(find_joker("Showman"))
-				local keys_in_shop = {}
-				if self.keep_shop_slots_in_pool then
-					if G.shop_jokers then
-						for _, card in ipairs(G.shop_jokers.cards) do
-							keys_in_shop[card.config.center.key] = true
-						end
-					end
-					if G.shop_vouchers then
-						for _, card in ipairs(G.shop_vouchers.cards) do
-							keys_in_shop[card.config.center.key] = true
-						end
-					end
-					if G.shop_booster then
-						for _, card in ipairs(G.shop_booster.cards) do
-							keys_in_shop[card.config.center.key] = true
-						end
-					end
-				end
-				for _, v in ipairs(pool) do
-					if
-						not v.unlocked
-						or (G.GAME.used_jokers[v.key] and not keys_in_shop[v.key] and not is_showman_present)
-					then
-						items_left_in_pool = items_left_in_pool - 1
-					end
-				end
-				table.insert(rarities_list, {
-					key = key,
-					localized = localize("k_" .. key:lower()),
-					weight = weights[i],
-					items_count = items_in_pool,
-					items_left = items_left_in_pool,
-					badge_colour = G.C.RARITY[i],
-					index = i,
-				})
-			end
-		end
-		table.sort(rarities_list, function(a, b)
-			if a.weight ~= b.weight then
-				return a.weight > b.weight
-			else
-				return a.index < b.index
-			end
-		end)
-		return rarities_list
-	end,
-	get_sorted_pools = function(self)
-		local pools_list = {}
-		local total_weight = G.GAME.joker_rate + G.GAME.playing_card_rate
-		table.insert(pools_list, {
-			key = "Joker",
-			index = 1,
-			localized = localize("k_joker"),
-			badge_colour = G.C.SECONDARY_SET.Joker,
-			weight = G.GAME.joker_rate,
-		})
-		table.insert(pools_list, {
-			key = "Playing",
-			index = 2,
-			localized = localize("k_base_cards"),
-			badge_colour = G.C.SECONDARY_SET.Enhanced,
-			weight = G.GAME.playing_card_rate,
-		})
-		local pools
-		if SMODS and SMODS.ConsumableType then
-			pools = SMODS.ConsumableType.ctype_buffer
-		else
-			pools = { "Spectral", "Tarot", "Planet" }
-		end
-		for index, _pool in ipairs(pools) do
-			local weight = G.GAME[_pool:lower() .. "_rate"]
-			local v = {
-				key = _pool,
-				index = index + 2,
-				localized = localize("k_" .. _pool:lower()),
-				badge_colour = G.C.SECONDARY_SET[_pool],
-				weight = weight,
-			}
-			table.insert(pools_list, v)
-			total_weight = total_weight + weight
-		end
-		for _, v in ipairs(pools_list) do
-			-- v.rate = v.weight / total_weight
-			v.weight = v.weight / total_weight
-		end
-		table.sort(pools_list, function(a, b)
-			if a.weight ~= b.weight then
-				return a.weight > b.weight
-			else
-				return a.index < b.index
-			end
-		end)
-		return pools_list
-	end,
 
 	pool_info_for = {
 		Edition = 1,
@@ -319,7 +147,6 @@ TheFamily.own_tabs.pools_probabilities = {
 			end,
 		},
 	},
-
 	get_pool_info = function(self, pool)
 		local pool_info = self.pool_info[pool]
 		return {
@@ -332,6 +159,173 @@ TheFamily.own_tabs.pools_probabilities = {
 		}
 	end,
 
+	get_sorted_rarities = function(self)
+		local rarities_list = {}
+		if SMODS and SMODS.Rarities then
+			-- Taken from SMODS
+			local available_rarities = copy_table(SMODS.ObjectTypes["Joker"].rarities)
+			local total_weight = 0
+			for _, v in ipairs(available_rarities) do
+				local rarity = SMODS.Rarities[v.key]
+				if rarity and (not rarity.in_pool or rarity:in_pool()) then
+					v.mod = G.GAME[tostring(v.key):lower() .. "_mod"] or 1
+					if rarity.get_weight then
+						v.weight = rarity:get_weight(v.weight, SMODS.ObjectTypes["Joker"])
+					end
+					v.weight = v.weight * v.mod
+					total_weight = total_weight + v.weight
+				end
+			end
+			for index, v in ipairs(available_rarities) do
+				local rarity = SMODS.Rarities[v.key]
+				if rarity and (not rarity.in_pool or rarity:in_pool()) then
+					v.weight = v.weight / total_weight
+					local vanilla_rarities = { ["Common"] = 1, ["Uncommon"] = 2, ["Rare"] = 3, ["Legendary"] = 4 }
+					local pool = G.P_JOKER_RARITY_POOLS[vanilla_rarities[rarity.key] or rarity.key]
+					local items_in_pool = #pool
+					local items_left_in_pool = items_in_pool
+					local is_showman_present = next(find_joker("Showman"))
+					local keys_in_shop = {}
+					if self.keep_shop_slots_in_pool then
+						if G.shop_jokers then
+							for _, card in ipairs(G.shop_jokers.cards) do
+								keys_in_shop[card.config.center.key] = true
+							end
+						end
+						if G.shop_vouchers then
+							for _, card in ipairs(G.shop_vouchers.cards) do
+								keys_in_shop[card.config.center.key] = true
+							end
+						end
+						if G.shop_booster then
+							for _, card in ipairs(G.shop_booster.cards) do
+								keys_in_shop[card.config.center.key] = true
+							end
+						end
+					end
+					local showman_check = SMODS.showman or function(key)
+						return is_showman_present
+					end
+					for _, v in ipairs(pool) do
+						if
+							not v.unlocked
+							or (G.GAME.used_jokers[v.key] and not keys_in_shop[v.key] and not showman_check(v.key))
+						then
+							items_left_in_pool = items_left_in_pool - 1
+						end
+					end
+					table.insert(rarities_list, {
+						key = rarity.key,
+						localized = SMODS.Rarity:get_rarity_badge(v.key),
+						badge_colour = rarity.badge_colour,
+						weight = v.weight,
+						items_count = #G.P_JOKER_RARITY_POOLS[vanilla_rarities[rarity.key] or rarity.key],
+						items_left = items_left_in_pool,
+						index = index,
+					})
+				end
+			end
+		else
+			local weights = { 0.7, 0.25, 0.05, 0 }
+			for i, key in ipairs({ "Common", "Uncommon", "Rare" }) do
+				local pool = G.P_JOKER_RARITY_POOLS[i]
+				local items_in_pool = #pool
+				local items_left_in_pool = items_in_pool
+				local is_showman_present = next(find_joker("Showman"))
+				local keys_in_shop = {}
+				if self.keep_shop_slots_in_pool then
+					if G.shop_jokers then
+						for _, card in ipairs(G.shop_jokers.cards) do
+							keys_in_shop[card.config.center.key] = true
+						end
+					end
+					if G.shop_vouchers then
+						for _, card in ipairs(G.shop_vouchers.cards) do
+							keys_in_shop[card.config.center.key] = true
+						end
+					end
+					if G.shop_booster then
+						for _, card in ipairs(G.shop_booster.cards) do
+							keys_in_shop[card.config.center.key] = true
+						end
+					end
+				end
+				for _, v in ipairs(pool) do
+					if
+						not v.unlocked
+						or (G.GAME.used_jokers[v.key] and not keys_in_shop[v.key] and not is_showman_present)
+					then
+						items_left_in_pool = items_left_in_pool - 1
+					end
+				end
+				table.insert(rarities_list, {
+					key = key,
+					localized = localize("k_" .. key:lower()),
+					weight = weights[i],
+					items_count = items_in_pool,
+					items_left = items_left_in_pool,
+					badge_colour = G.C.RARITY[i],
+					index = i,
+				})
+			end
+		end
+		table.sort(rarities_list, function(a, b)
+			if a.weight ~= b.weight then
+				return a.weight > b.weight
+			else
+				return a.index < b.index
+			end
+		end)
+		return rarities_list
+	end,
+	get_sorted_pools = function(self)
+		local pools_list = {}
+		local total_weight = G.GAME.joker_rate + G.GAME.playing_card_rate
+		table.insert(pools_list, {
+			key = "Joker",
+			index = 1,
+			localized = localize("k_joker"),
+			badge_colour = G.C.SECONDARY_SET.Joker,
+			weight = G.GAME.joker_rate,
+		})
+		table.insert(pools_list, {
+			key = "Playing",
+			index = 2,
+			localized = localize("k_base_cards"),
+			badge_colour = G.C.SECONDARY_SET.Enhanced,
+			weight = G.GAME.playing_card_rate,
+		})
+		local pools
+		if SMODS and SMODS.ConsumableType then
+			pools = SMODS.ConsumableType.ctype_buffer
+		else
+			pools = { "Spectral", "Tarot", "Planet" }
+		end
+		for index, _pool in ipairs(pools) do
+			local weight = G.GAME[_pool:lower() .. "_rate"]
+			local v = {
+				key = _pool,
+				index = index + 2,
+				localized = localize("k_" .. _pool:lower()),
+				badge_colour = G.C.SECONDARY_SET[_pool],
+				weight = weight,
+			}
+			table.insert(pools_list, v)
+			total_weight = total_weight + weight
+		end
+		for _, v in ipairs(pools_list) do
+			-- v.rate = v.weight / total_weight
+			v.weight = v.weight / total_weight
+		end
+		table.sort(pools_list, function(a, b)
+			if a.weight ~= b.weight then
+				return a.weight > b.weight
+			else
+				return a.index < b.index
+			end
+		end)
+		return pools_list
+	end,
 	get_sorted_pool = function(self, pool)
 		local items_list = {}
 		local pool_info = self:get_pool_info(pool)
@@ -340,7 +334,8 @@ TheFamily.own_tabs.pools_probabilities = {
 			local total_weight = 0
 			local total_scaled_weight = 0
 			for index, item in ipairs(available_items) do
-				local should_skip = pool == "Edition" and item.key == "e_base"
+				local should_skip = (item.in_pool and not item:in_pool())
+					or (pool == "Edition" and item.key == "e_base")
 				if not should_skip then
 					total_weight = total_weight + (item.weight or pool_info.base_item_weight)
 					local localized = ""
@@ -407,6 +402,45 @@ TheFamily.own_tabs.pools_probabilities = {
 		end)
 		return items_list
 	end,
+	get_sorted_boosters = function(self)
+		local boosters_list = {}
+		local boosters_dictionary = {}
+		local available_boosters = G.P_CENTER_POOLS.Booster
+		local total_weight = 0
+		local index = 0
+		for _, item in ipairs(available_boosters) do
+			if not item.in_pool or item:in_pool() then
+				local scaled_weight = item.get_weight and item:get_weight() or item.weight or 1
+				total_weight = total_weight + scaled_weight
+				local kind = item.kind
+				if boosters_dictionary[kind] then
+					boosters_dictionary[kind].weight = boosters_dictionary[kind].weight + scaled_weight
+				else
+					index = index + 1
+					boosters_dictionary[item.kind] = {
+						kind = item.kind,
+						index = index,
+						weight = scaled_weight,
+						localized = item.group_key and localize(item.group_key)
+							or localize("k_" .. item.kind:lower() .. "_pack"),
+						badge_colour = G.C.BOOSTER,
+					}
+				end
+			end
+		end
+		for k, v in pairs(boosters_dictionary) do
+			v.weight = v.weight / total_weight
+			table.insert(boosters_list, v)
+		end
+		table.sort(boosters_list, function(a, b)
+			if a.weight ~= b.weight then
+				return a.weight > b.weight
+			else
+				return a.index < b.index
+			end
+		end)
+		return boosters_list
+	end,
 
 	get_UI_pools = function(self)
 		local pools = self:get_sorted_pools()
@@ -421,8 +455,8 @@ TheFamily.own_tabs.pools_probabilities = {
 					{
 						n = G.UIT.C,
 						config = {
-							minw = 2,
-							maxw = 2,
+							minw = 2.5,
+							maxw = 2.5,
 							align = "cm",
 						},
 						nodes = {
@@ -479,8 +513,6 @@ TheFamily.own_tabs.pools_probabilities = {
 					{
 						n = G.UIT.C,
 						config = {
-							minw = 2,
-							maxw = 2,
 							align = "cm",
 						},
 						nodes = {
@@ -494,9 +526,10 @@ TheFamily.own_tabs.pools_probabilities = {
 											align = "cm",
 											colour = pool.badge_colour,
 											r = 0.1,
-											minw = 2,
+											minw = 2.5,
 											minh = 0.25,
 											emboss = 0.05,
+											maxw = 2.5,
 											padding = 0.075,
 										},
 										nodes = {
@@ -571,8 +604,8 @@ TheFamily.own_tabs.pools_probabilities = {
 					{
 						n = G.UIT.C,
 						config = {
-							minw = 2,
-							maxw = 2,
+							minw = 2.5,
+							maxw = 2.5,
 							align = "cm",
 						},
 						nodes = {
@@ -673,8 +706,6 @@ TheFamily.own_tabs.pools_probabilities = {
 					{
 						n = G.UIT.C,
 						config = {
-							minw = 2,
-							maxw = 2,
 							align = "cm",
 						},
 						nodes = {
@@ -688,9 +719,10 @@ TheFamily.own_tabs.pools_probabilities = {
 											align = "cm",
 											colour = rarity.badge_colour or G.C.GREEN,
 											r = 0.1,
-											minw = 2,
+											minw = 2.5,
 											minh = 0.25,
 											emboss = 0.05,
+											maxw = 2.5,
 											padding = 0.075,
 										},
 										nodes = {
@@ -843,8 +875,8 @@ TheFamily.own_tabs.pools_probabilities = {
 					{
 						n = G.UIT.C,
 						config = {
-							minw = 2,
-							maxw = 2,
+							minw = 2.5,
+							maxw = 2.5,
 							align = "cm",
 						},
 						nodes = {
@@ -923,8 +955,6 @@ TheFamily.own_tabs.pools_probabilities = {
 					{
 						n = G.UIT.C,
 						config = {
-							minw = 2,
-							maxw = 2,
 							align = "cm",
 						},
 						nodes = {
@@ -938,9 +968,10 @@ TheFamily.own_tabs.pools_probabilities = {
 											align = "cm",
 											colour = edition.badge_colour,
 											r = 0.1,
-											minw = 2,
+											minw = 2.5,
 											minh = 0.25,
 											emboss = 0.05,
+											maxw = 2.5,
 											padding = 0.075,
 										},
 										nodes = {
@@ -1018,6 +1049,155 @@ TheFamily.own_tabs.pools_probabilities = {
 										n = G.UIT.T,
 										config = {
 											text = string.format("%0.3f%%", edition.rate * 100),
+											colour = G.C.CHIPS,
+											scale = 0.3,
+											align = "cm",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+		end
+		return result
+	end,
+	get_UI_boosters = function(self)
+		local pools = self:get_sorted_boosters()
+		local result = {
+			{
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 2.5,
+							maxw = 2.5,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Booster type",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Weight",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				n = G.UIT.R,
+				config = {
+					minh = 0.05,
+				},
+			},
+		}
+		for _, pool in ipairs(pools) do
+			table.insert(result, {
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = { align = "cm" },
+								nodes = {
+									{
+										n = G.UIT.R,
+										config = {
+											align = "cm",
+											colour = pool.badge_colour,
+											r = 0.1,
+											minw = 2.5,
+											minh = 0.25,
+											maxw = 2.5,
+											emboss = 0.05,
+											padding = 0.075,
+										},
+										nodes = {
+											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
+											{
+												n = G.UIT.O,
+												config = {
+													object = DynaText({
+														string = pool.localized or "ERROR",
+														colours = { G.C.WHITE },
+														float = true,
+														shadow = true,
+														offset_y = -0.05,
+														silent = true,
+														spacing = 1,
+														scale = 0.25,
+													}),
+												},
+											},
+											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									align = "cm",
+								},
+								nodes = {
+									{
+										n = G.UIT.T,
+										config = {
+											text = string.format("%0.3f%%", pool.weight * 100),
 											colour = G.C.CHIPS,
 											scale = 0.3,
 											align = "cm",
@@ -1125,6 +1305,23 @@ TheFamily.own_tabs.pools_probabilities = {
 						w = 4,
 					}),
 				},
+			},
+		}
+	end,
+	create_UI_boosters_popup = function(self, definition, card)
+		return {
+			name = {
+				{
+					n = G.UIT.T,
+					config = {
+						text = "Shop probabilities: Booster types",
+						scale = 0.35,
+						colour = G.C.WHITE,
+					},
+				},
+			},
+			description = {
+				self:get_UI_boosters(),
 			},
 		}
 	end,
@@ -1293,6 +1490,36 @@ TheFamily.own_tabs.pools_probabilities = {
 				then
 					TheFamily.own_tabs.pools_probabilities.last_rerender.Edition = now
 					defuninition:rerender_popup()
+				end
+			end,
+
+			keep_popup_when_highlighted = true,
+		}),
+		Booster = TheFamily.create_tab({
+			key = "thefamily_pools_boosters",
+			order = 6,
+			group_key = "thefamily_default",
+			center = "v_overstock_plus",
+			type = "switch",
+
+			front_label = function()
+				return {
+					text = "Booster types",
+				}
+			end,
+			popup = function(definition, card)
+				TheFamily.own_tabs.pools_probabilities.last_rerender.Booster = love.timer.getTime()
+				return TheFamily.own_tabs.pools_probabilities:create_UI_boosters_popup(definition, card)
+			end,
+			update = function(definition, card, dt)
+				local now = love.timer.getTime()
+				if
+					card
+					and card.children.popup
+					and TheFamily.own_tabs.pools_probabilities.last_rerender.Booster + 3 < now
+				then
+					TheFamily.own_tabs.pools_probabilities.last_rerender.Booster = now
+					definition:rerender_popup()
 				end
 			end,
 
