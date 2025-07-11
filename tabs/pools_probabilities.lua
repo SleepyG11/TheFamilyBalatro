@@ -6,6 +6,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		Rarity = 0,
 		Edition = 0,
 		Booster = 0,
+		Voucher = 0,
 	},
 
 	modifier_index = 1,
@@ -179,7 +180,7 @@ TheFamily.own_tabs.pools_probabilities = {
 			for index, v in ipairs(available_rarities) do
 				local rarity = SMODS.Rarities[v.key]
 				if rarity and (not rarity.in_pool or rarity:in_pool()) then
-					v.weight = v.weight / total_weight
+					v.weight = total_weight == 0 and 0 or v.weight / total_weight
 					local vanilla_rarities = { ["Common"] = 1, ["Uncommon"] = 2, ["Rare"] = 3, ["Legendary"] = 4 }
 					local pool = G.P_JOKER_RARITY_POOLS[vanilla_rarities[rarity.key] or rarity.key]
 					local items_in_pool = #pool
@@ -315,7 +316,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		end
 		for _, v in ipairs(pools_list) do
 			-- v.rate = v.weight / total_weight
-			v.weight = v.weight / total_weight
+			v.weight = total_weight == 0 and 0 or v.weight / total_weight
 		end
 		table.sort(pools_list, function(a, b)
 			if a.weight ~= b.weight then
@@ -362,8 +363,8 @@ TheFamily.own_tabs.pools_probabilities = {
 			end
 			total_weight = total_weight + (total_weight / 4 * 96)
 			for _, v in ipairs(items_list) do
-				v.rate = v.weight / total_weight * pool_info.modifier
-				v.weight = v.weight / total_scaled_weight
+				v.rate = total_weight == 0 and 0 or v.weight / total_weight * pool_info.modifier
+				v.weight = total_scaled_weight == 0 and 0 or v.weight / total_scaled_weight
 			end
 		else
 			local available_items = pool_info.get_vanilla()
@@ -429,7 +430,7 @@ TheFamily.own_tabs.pools_probabilities = {
 			end
 		end
 		for k, v in pairs(boosters_dictionary) do
-			v.weight = v.weight / total_weight
+			v.weight = total_weight == 0 and 0 or v.weight / total_weight
 			table.insert(boosters_list, v)
 		end
 		table.sort(boosters_list, function(a, b)
@@ -440,6 +441,66 @@ TheFamily.own_tabs.pools_probabilities = {
 			end
 		end)
 		return boosters_list
+	end,
+	get_sorted_vouchers = function(self)
+		local vouchers_deps = {}
+		local voucher_levels = {}
+		local vouchers_level_pools = {}
+		local vouchers_in_pool = {}
+		local total_vouchers = 0
+		local redeemable_vouchers = 0
+		for _, voucher in ipairs(G.P_CENTER_POOLS.Voucher) do
+			vouchers_deps[voucher.key] = voucher.requires or {}
+			if (not voucher.in_pool or voucher:in_pool()) and voucher.unlocked then
+				total_vouchers = total_vouchers + 1
+				vouchers_in_pool[voucher.key] = true
+			end
+		end
+		local function process_voucher(key)
+			if voucher_levels[key] then
+				return voucher_levels[key]
+			end
+			local level = 1
+			local is_deps_redeemed = true
+			if #vouchers_deps[key] then
+				for _, voucher_dep in ipairs(vouchers_deps[key]) do
+					level = math.max(level, process_voucher(voucher_dep) + 1)
+					if not G.GAME.used_vouchers[voucher_dep] then
+						is_deps_redeemed = false
+					end
+				end
+			end
+			voucher_levels[key] = level
+			vouchers_level_pools[level] = vouchers_level_pools[level]
+				or {
+					level = level,
+					items_count = 0,
+					items_left = 0,
+				}
+			if vouchers_in_pool[key] then
+				vouchers_level_pools[level].items_count = vouchers_level_pools[level].items_count + 1
+				if not G.GAME.used_vouchers[key] and is_deps_redeemed then
+					redeemable_vouchers = redeemable_vouchers + 1
+					vouchers_level_pools[level].items_left = vouchers_level_pools[level].items_left + 1
+				end
+			end
+			table.insert(vouchers_level_pools[level], key)
+			return level
+		end
+		for _, voucher in ipairs(G.P_CENTER_POOLS.Voucher) do
+			process_voucher(voucher.key)
+		end
+		local result = {}
+
+		for k, v in pairs(vouchers_level_pools) do
+			v.weight = redeemable_vouchers == 0 and 0 or v.items_left / redeemable_vouchers
+			v.rate = v.items_left == 0 and 0 or v.weight / v.items_left
+			table.insert(result, v)
+		end
+		table.sort(result, function(a, b)
+			return a.level < b.level
+		end)
+		return result
 	end,
 
 	get_UI_pools = function(self)
@@ -808,7 +869,11 @@ TheFamily.own_tabs.pools_probabilities = {
 									{
 										n = G.UIT.T,
 										config = {
-											text = string.format("(%0.3f%%)", rarity.weight / rarity.items_count * 100),
+											text = string.format(
+												"(%0.3f%%)",
+												rarity.items_count == 0 and 0
+													or rarity.weight / rarity.items_count * 100
+											),
 											colour = adjust_alpha(G.C.UI.TEXT_DARK, 0.6),
 											scale = 0.3,
 											align = "cm",
@@ -847,7 +912,10 @@ TheFamily.own_tabs.pools_probabilities = {
 									{
 										n = G.UIT.T,
 										config = {
-											text = string.format("(%0.3f%%)", rarity.weight / rarity.items_left * 100),
+											text = string.format(
+												"(%0.3f%%)",
+												rarity.items_left == 0 and 0 or rarity.weight / rarity.items_left * 100
+											),
 											colour = adjust_alpha(G.C.UI.TEXT_DARK, 0.6),
 											scale = 0.3,
 											align = "cm",
@@ -1212,6 +1280,197 @@ TheFamily.own_tabs.pools_probabilities = {
 		end
 		return result
 	end,
+	get_UI_vouchers = function(self)
+		local rarities = self:get_sorted_vouchers()
+		local result = {
+			{
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							minw = 1.4,
+							maxw = 1.4,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Level",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Weight",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1.4,
+							minw = 1.4,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = "Left",
+									scale = 0.3,
+									colour = G.C.UI.TEXT_DARK,
+									align = "cm",
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				n = G.UIT.R,
+				config = {
+					minh = 0.05,
+				},
+			},
+		}
+		for _, rarity in ipairs(rarities) do
+			table.insert(result, {
+				n = G.UIT.R,
+				config = {
+					padding = 0.025,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							align = "cm",
+							maxw = 1.4,
+							minw = 1.4,
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									align = "cm",
+								},
+								nodes = {
+									{
+										n = G.UIT.T,
+										config = {
+											text = string.format("Level %s", rarity.level),
+											colour = G.C.SECONDARY_SET.Voucher,
+											scale = 0.3,
+											align = "cm",
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							maxw = 1,
+							minw = 1,
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									align = "cm",
+								},
+								nodes = {
+									{
+										n = G.UIT.T,
+										config = {
+											text = string.format("%0.3f%%", rarity.weight * 100),
+											colour = G.C.CHIPS,
+											scale = 0.3,
+											align = "cm",
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						n = G.UIT.C,
+					},
+					{
+						n = G.UIT.C,
+						config = {
+							align = "cm",
+							maxw = 1.4,
+							minw = 1.4,
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									align = "cm",
+								},
+								nodes = {
+									{
+										n = G.UIT.T,
+										config = {
+											text = string.format("%s ", rarity.items_left),
+											colour = G.C.CHIPS,
+											scale = 0.3,
+											align = "cm",
+										},
+									},
+									{
+										n = G.UIT.T,
+										config = {
+											text = string.format("(%0.3f%%)", rarity.rate * 100),
+											colour = adjust_alpha(G.C.UI.TEXT_DARK, 0.6),
+											scale = 0.3,
+											align = "cm",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+		end
+		return result
+	end,
 
 	create_UI_pools_popup = function(self, definition, card)
 		return {
@@ -1304,6 +1563,34 @@ TheFamily.own_tabs.pools_probabilities = {
 						scale = 0.6,
 						w = 4,
 					}),
+				},
+			},
+		}
+	end,
+	create_UI_vouchers_popup = function(self, definition, card)
+		return {
+			name = {
+				{
+					n = G.UIT.T,
+					config = {
+						text = "Shop probabilities: Vouchers",
+						scale = 0.35,
+						colour = G.C.WHITE,
+					},
+				},
+			},
+			description = {
+				self:get_UI_vouchers(),
+				{
+					{
+						n = G.UIT.R,
+						nodes = TheFamily.UI.localize_text({
+							"{C:inactive}Gray percents represent probability to{}",
+							"{C:inactive}find{} {C:attention}one specific{} {C:inactive}voucher of this level{}",
+						}, {
+							align = "cm",
+						}),
+					},
 				},
 			},
 		}
@@ -1519,6 +1806,36 @@ TheFamily.own_tabs.pools_probabilities = {
 					and TheFamily.own_tabs.pools_probabilities.last_rerender.Booster + 3 < now
 				then
 					TheFamily.own_tabs.pools_probabilities.last_rerender.Booster = now
+					definition:rerender_popup()
+				end
+			end,
+
+			keep_popup_when_highlighted = true,
+		}),
+		Voucher = TheFamily.create_tab({
+			key = "thefamily_pools_vouchers",
+			order = 7,
+			group_key = "thefamily_default",
+			center = "v_antimatter",
+			type = "switch",
+
+			front_label = function()
+				return {
+					text = "Vouchers",
+				}
+			end,
+			popup = function(definition, card)
+				TheFamily.own_tabs.pools_probabilities.last_rerender.Voucher = love.timer.getTime()
+				return TheFamily.own_tabs.pools_probabilities:create_UI_vouchers_popup(definition, card)
+			end,
+			update = function(definition, card, dt)
+				local now = love.timer.getTime()
+				if
+					card
+					and card.children.popup
+					and TheFamily.own_tabs.pools_probabilities.last_rerender.Voucher + 3 < now
+				then
+					TheFamily.own_tabs.pools_probabilities.last_rerender.Voucher = now
 					definition:rerender_popup()
 				end
 			end,
