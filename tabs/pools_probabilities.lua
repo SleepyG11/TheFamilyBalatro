@@ -420,13 +420,20 @@ TheFamily.own_tabs.pools_probabilities = {
 				if boosters_dictionary[kind] then
 					boosters_dictionary[kind].weight = boosters_dictionary[kind].weight + scaled_weight
 				else
+					local localized = ""
+					if item.kind then
+						localized = localize("k_" .. item.kind:lower() .. "_pack")
+					elseif item.group_key then
+						localized = localize(item.group_key)
+					else
+						localized = localize("k_booster_group_" .. item.key)
+					end
 					index = index + 1
-					boosters_dictionary[item.kind] = {
-						kind = item.kind,
+					boosters_dictionary[kind] = {
+						kind = kind,
 						index = index,
 						weight = scaled_weight,
-						localized = item.group_key and localize(item.group_key)
-							or localize("k_" .. item.kind:lower() .. "_pack"),
+						localized = localized,
 						badge_colour = G.C.BOOSTER,
 					}
 				end
