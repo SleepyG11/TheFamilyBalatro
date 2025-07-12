@@ -90,3 +90,19 @@ end
 function TheFamily.utils.as_array(t)
 	return type(t) == "table" and t or { t }
 end
+
+function TheFamily.utils.table_slice(t, n)
+	local sliced = {}
+	for i = #t, n + 1, -1 do
+		table.insert(sliced, t[i])
+		t[i] = nil
+	end
+	return t, sliced
+end
+function TheFamily.utils.table_copy_part(t, from_index, to_index)
+	local result = {}
+	for i = from_index, to_index - 1 do
+		result[#result + 1] = t[i]
+	end
+	return result
+end

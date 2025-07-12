@@ -5,11 +5,57 @@ TheFamily.own_tabs.pools_probabilities = {
 		Pool = 0,
 		Rarity = 0,
 		Edition = 0,
+		Enhanced = 0,
+		Seal = 0,
 		Booster = 0,
 		Voucher = 0,
 	},
+	pages = {
+		Pool = 1,
+		Rarity = 1,
+		Edition = 1,
+		Enhanced = 1,
+		Seal = 1,
+		Booster = 1,
+		Voucher = 1,
+	},
 
 	modifier_index = 1,
+
+	paginate_sorted_items = function(self, items, items_per_page, pool)
+		local max_page = math.ceil(#items / items_per_page)
+		self.pages[pool] = math.max(1, math.min(self.pages[pool] or 1, max_page))
+		local items_to_render = TheFamily.utils.table_copy_part(
+			items,
+			items_per_page * (self.pages[pool] - 1) + 1,
+			(items_per_page * self.pages[pool]) + 1
+		)
+		local pagination_to_render = nil
+		if max_page > 1 then
+			local options = {}
+			for i = 1, max_page do
+				table.insert(options, localize("k_page") .. " " .. tostring(i) .. "/" .. tostring(max_page))
+			end
+			pagination_to_render = {
+				n = G.UIT.R,
+				config = {
+					padding = 0.05,
+				},
+				nodes = {
+					create_option_cycle({
+						options = options,
+						opt_callback = "thefamily_update_pools_page",
+						current_option = self.pages[pool],
+						colour = G.C.RED,
+						scale = 0.6,
+						w = 4,
+						thefamily_pool = pool,
+					}),
+				},
+			}
+		end
+		return items_to_render, pagination_to_render
+	end,
 
 	pool_info_for = {
 		Edition = 1,
@@ -427,13 +473,13 @@ TheFamily.own_tabs.pools_probabilities = {
 							localized = ""
 						end
 					end
-					if not localized and item.group_key then
+					if localized == "" and item.group_key then
 						localized = localize(item.group_key)
 						if localized == "ERROR" then
 							localized = ""
 						end
 					end
-					if not localized then
+					if localized == "" then
 						localized = localize("k_booster_group_" .. item.key)
 					end
 					index = index + 1
@@ -587,7 +633,8 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			},
 		}
-		for _, pool in ipairs(pools) do
+		local pools_to_render, pagination = self:paginate_sorted_items(pools, 10, "Pool")
+		for _, pool in ipairs(pools_to_render) do
 			table.insert(result, {
 				n = G.UIT.R,
 				config = {
@@ -674,6 +721,7 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			})
 		end
+		table.insert(result, pagination)
 		return result
 	end,
 	get_UI_rarities = function(self)
@@ -780,7 +828,8 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			},
 		}
-		for _, rarity in ipairs(rarities) do
+		local rarities_to_render, pagination = self:paginate_sorted_items(rarities, 10, "Rarity")
+		for _, rarity in ipairs(rarities_to_render) do
 			table.insert(result, {
 				n = G.UIT.R,
 				config = {
@@ -952,6 +1001,7 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			})
 		end
+		table.insert(result, pagination)
 		return result
 	end,
 	get_UI_pool = function(self, pool, first_column)
@@ -1036,7 +1086,8 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			},
 		}
-		for _, edition in ipairs(editions) do
+		local pools_to_render, pagination = self:paginate_sorted_items(editions, 10, pool)
+		for _, edition in ipairs(pools_to_render) do
 			table.insert(result, {
 				n = G.UIT.R,
 				config = {
@@ -1153,6 +1204,7 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			})
 		end
+		table.insert(result, pagination)
 		return result
 	end,
 	get_UI_boosters = function(self)
@@ -1215,7 +1267,8 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			},
 		}
-		for _, pool in ipairs(pools) do
+		local pools_to_render, pagination = self:paginate_sorted_items(pools, 10, "Booster")
+		for _, pool in ipairs(pools_to_render) do
 			table.insert(result, {
 				n = G.UIT.R,
 				config = {
@@ -1302,10 +1355,11 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			})
 		end
+		table.insert(result, pagination)
 		return result
 	end,
 	get_UI_vouchers = function(self)
-		local rarities = self:get_sorted_vouchers()
+		local vouchers = self:get_sorted_vouchers()
 		local result = {
 			{
 				n = G.UIT.R,
@@ -1386,7 +1440,8 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			},
 		}
-		for _, rarity in ipairs(rarities) do
+		local pools_to_render, pagination = self:paginate_sorted_items(vouchers, 10, "Voucher")
+		for _, rarity in ipairs(pools_to_render) do
 			table.insert(result, {
 				n = G.UIT.R,
 				config = {
@@ -1493,6 +1548,7 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			})
 		end
+		table.insert(result, pagination)
 		return result
 	end,
 
@@ -1874,6 +1930,14 @@ TheFamily.own_tabs.pools_probabilities = {
 function G.FUNCS.thefamily_update_pools_modifier_index(arg)
 	TheFamily.own_tabs.pools_probabilities.modifier_index = arg.to_key
 	for pool, tab in pairs(TheFamily.own_tabs.pools_probabilities.tabs) do
+		tab:rerender_popup()
+	end
+end
+function G.FUNCS.thefamily_update_pools_page(arg)
+	local pool = arg.cycle_config.thefamily_pool
+	TheFamily.own_tabs.pools_probabilities.pages[pool] = arg.to_key
+	local tab = TheFamily.own_tabs.pools_probabilities.tabs[arg.cycle_config.thefamily_pool]
+	if tab then
 		tab:rerender_popup()
 	end
 end
