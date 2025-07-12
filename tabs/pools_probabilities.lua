@@ -416,10 +416,7 @@ TheFamily.own_tabs.pools_probabilities = {
 			if not item.in_pool or item:in_pool() then
 				local scaled_weight = item.get_weight and item:get_weight() or item.weight or 1
 				total_weight = total_weight + scaled_weight
-				local kind = item.kind
-				if not kind then
-					kind = item.group_key or localize("k_booster_group_" .. item.key)
-				end
+				local kind = item.kind or item.group_key or localize("k_booster_group_" .. item.key)
 				if boosters_dictionary[kind] then
 					boosters_dictionary[kind].weight = boosters_dictionary[kind].weight + scaled_weight
 				else
