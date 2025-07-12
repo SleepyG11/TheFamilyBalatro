@@ -1,6 +1,13 @@
 TheFamily.own_tabs.time_tracker = {
-	alert_label = os.date("%I:%M:%S %p", os.time()),
+	alert_label = "",
 	real_time_label = os.date("%I:%M:%S %p", os.time()),
+
+	time_formats = {
+		"%I:%M:%S %p",
+		"%H:%M:%S",
+		"%I:%M %p",
+		"%H:%M",
+	},
 
 	current_hand_start = 0,
 	current_hand_time = 0,
@@ -41,7 +48,8 @@ TheFamily.own_tabs.time_tracker = {
 
 	update = function(dt)
 		local self = TheFamily.own_tabs.time_tracker
-		self.real_time_label = os.date("%I:%M:%S %p", os.time())
+
+		self.real_time_label = os.date(self.time_formats[TheFamily.cc.time_tracker.format], os.time())
 		self.session_label = self.format_time(G.TIMERS.UPTIME or 0, false, true)
 		self.acceleration_label = string.format("x%.2f", G.SPEEDFACTOR or 0)
 		self.this_run_label = self.format_time((G.TIMERS.UPTIME or 0) - self.this_run_start, true, true)
@@ -60,7 +68,7 @@ TheFamily.own_tabs.time_tracker = {
 				self.current_hand_start = 0
 				self.current_hand_label = "Not played yet"
 			end
-			self.alert_label = os.date("%I:%M:%S %p", os.time())
+			self.alert_label = self.real_time_label
 		end
 	end,
 
@@ -155,6 +163,16 @@ TheFamily.own_tabs.time_tracker = {
 						ref_value = "current_hand_label",
 					}),
 				},
+				{
+					create_option_cycle({
+						options = { "Long 12h", "Long 24h", "Short 12h", "Short 24h" },
+						opt_callback = "thefamily_update_time_tracker_time_format",
+						current_option = TheFamily.cc.time_tracker.format,
+						colour = G.C.RED,
+						scale = 0.6,
+						w = 4,
+					}),
+				},
 			},
 		}
 	end,
@@ -202,3 +220,8 @@ TheFamily.create_tab({
 
 	keep_popup_when_highlighted = true,
 })
+
+function G.FUNCS.thefamily_update_time_tracker_time_format(arg)
+	TheFamily.config.current.time_tracker.format = arg.to_key
+	TheFamily.config.save()
+end
