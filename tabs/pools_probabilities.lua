@@ -423,7 +423,13 @@ TheFamily.own_tabs.pools_probabilities = {
 					local localized = ""
 					if item.kind then
 						localized = localize("k_" .. item.kind:lower() .. "_pack")
-					else
+                        if localized == "ERROR" then localized = ""
+                    end
+                    if not localized and item.group_key then
+                        localized = localize(item.group_key)
+                        if localized == "ERROR" then localized = ""
+                    end
+					if not localized then
 						localized = localize("k_booster_group_" .. item.key)
 					end
 					index = index + 1
