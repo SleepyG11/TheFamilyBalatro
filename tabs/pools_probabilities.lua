@@ -423,8 +423,6 @@ TheFamily.own_tabs.pools_probabilities = {
 					local localized = ""
 					if item.kind then
 						localized = localize("k_" .. item.kind:lower() .. "_pack")
-					elseif item.group_key then
-						localized = localize(item.group_key)
 					else
 						localized = localize("k_booster_group_" .. item.key)
 					end
@@ -472,11 +470,17 @@ TheFamily.own_tabs.pools_probabilities = {
 			end
 			local level = 1
 			local is_deps_redeemed = true
-			if #vouchers_deps[key] then
-				for _, voucher_dep in ipairs(vouchers_deps[key]) do
-					level = math.max(level, process_voucher(voucher_dep) + 1)
-					if not G.GAME.used_vouchers[voucher_dep] then
-						is_deps_redeemed = false
+			if vouchers_deps[key] then
+				local deps = vouchers_deps[key] or {}
+				if type(deps) ~= "table" then
+					deps = { deps }
+				end
+				if #deps > 0 then
+					for _, voucher_dep in ipairs(vouchers_deps[key]) do
+						level = math.max(level, process_voucher(voucher_dep) + 1)
+						if not G.GAME.used_vouchers[voucher_dep] then
+							is_deps_redeemed = false
+						end
 					end
 				end
 			end
