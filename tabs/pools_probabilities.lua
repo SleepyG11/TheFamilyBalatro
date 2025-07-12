@@ -40,6 +40,7 @@ TheFamily.own_tabs.pools_probabilities = {
 				n = G.UIT.R,
 				config = {
 					padding = 0.05,
+					align = "cm",
 				},
 				nodes = {
 					create_option_cycle({
