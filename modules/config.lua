@@ -5,6 +5,7 @@ local default_config = {
 
 	time_tracker = {
 		format = 1,
+		show_time_alert = true,
 	},
 }
 
