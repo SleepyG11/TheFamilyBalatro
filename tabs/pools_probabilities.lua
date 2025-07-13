@@ -1,3 +1,8 @@
+TheFamily.create_tab_group({
+	key = "thefamily_shop_pools",
+	order = 1,
+})
+
 TheFamily.own_tabs.pools_probabilities = {
 	keep_shop_slots_in_pool = true,
 
@@ -1690,7 +1695,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		Pool = TheFamily.create_tab({
 			key = "thefamily_pools_pools",
 			order = 1,
-			group_key = "thefamily_default",
+			group_key = "thefamily_shop_pools",
 			center = "v_overstock_norm",
 			type = "switch",
 
@@ -1720,7 +1725,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		Rarity = TheFamily.create_tab({
 			key = "thefamily_pools_rarities",
 			order = 2,
-			group_key = "thefamily_default",
+			group_key = "thefamily_shop_pools",
 			center = "v_hone",
 			type = "switch",
 
@@ -1750,7 +1755,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		Enhanced = TheFamily.create_tab({
 			key = "thefamily_pools_enhanced",
 			order = 3,
-			group_key = "thefamily_default",
+			group_key = "thefamily_shop_pools",
 			center = "v_tarot_tycoon",
 			type = "switch",
 
@@ -1786,7 +1791,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		Seal = TheFamily.create_tab({
 			key = "thefamily_pools_seal",
 			order = 4,
-			group_key = "thefamily_default",
+			group_key = "thefamily_shop_pools",
 			center = "v_illusion",
 			type = "switch",
 
@@ -1822,7 +1827,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		Edition = TheFamily.create_tab({
 			key = "thefamily_pools_editions",
 			order = 5,
-			group_key = "thefamily_default",
+			group_key = "thefamily_shop_pools",
 			center = "v_glow_up",
 			type = "switch",
 
@@ -1858,7 +1863,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		Booster = TheFamily.create_tab({
 			key = "thefamily_pools_boosters",
 			order = 6,
-			group_key = "thefamily_default",
+			group_key = "thefamily_shop_pools",
 			center = "v_overstock_plus",
 			type = "switch",
 
@@ -1888,7 +1893,7 @@ TheFamily.own_tabs.pools_probabilities = {
 		Voucher = TheFamily.create_tab({
 			key = "thefamily_pools_vouchers",
 			order = 7,
-			group_key = "thefamily_default",
+			group_key = "thefamily_shop_pools",
 			center = "v_antimatter",
 			type = "switch",
 

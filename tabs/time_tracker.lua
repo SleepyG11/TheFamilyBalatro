@@ -221,7 +221,7 @@ TheFamily.own_tabs.time_tracker = {
 	tab = TheFamily.create_tab({
 		key = "thefamily_time",
 		order = 0,
-		group_key = "thefamily_default",
+		group_key = "thefamily_general",
 		center = "v_hieroglyph",
 		type = "switch",
 
