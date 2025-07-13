@@ -127,7 +127,16 @@ TheFamily.own_tabs.time_tracker = {
 			}
 		end
 		return {
-			name = {},
+			name = {
+				{
+					n = G.UIT.T,
+					config = {
+						text = "Time info",
+						scale = 0.35,
+						colour = G.C.WHITE,
+					},
+				},
+			},
 			description = {
 				{
 					create_time_row({
@@ -162,8 +171,18 @@ TheFamily.own_tabs.time_tracker = {
 						ref_table = TheFamily.own_tabs.time_tracker,
 						ref_value = "current_hand_label",
 					}),
+					not card.highlighted and {
+						n = G.UIT.R,
+						config = { align = "cm", padding = 0.1 },
+						nodes = TheFamily.UI.localize_text({
+							"{C:inactive}Select to configure{}",
+						}, {
+							align = "cm",
+							scale = 0.8,
+						}),
+					} or nil,
 				},
-				{
+				card.highlighted and {
 					create_option_cycle({
 						options = { "Long 12h", "Long 24h", "Short 12h", "Short 24h" },
 						opt_callback = "thefamily_update_time_tracker_time_format",
@@ -192,7 +211,7 @@ TheFamily.own_tabs.time_tracker = {
 							}),
 						},
 					},
-				},
+				} or nil,
 			},
 		}
 	end,
