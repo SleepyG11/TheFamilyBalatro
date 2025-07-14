@@ -61,6 +61,11 @@ temp_data.tab = TheFamily.create_tab({
 	-- Default value is "overlay" btw.
 	type = "switch",
 
+	-- Multiple tabs can try to hide/show vanilla things like joker slots.
+	-- To prevent cases where multiple things displayed on this spot, we should close all related tabs and open our one.
+	-- To do this, we can which signals that we're affecting joker slots. This can be any key, but for our case we'll use pre-defined one.
+	switch_overlays = { TheFamily.SWITCH_OVERLAYS.JOKERS },
+
 	-- This time, let's do something different. Let's create own card with edition.
 	-- What about negative Uranus?
 	center = function(self, area)

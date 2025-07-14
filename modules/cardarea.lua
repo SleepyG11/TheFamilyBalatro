@@ -26,6 +26,9 @@ function TheFamilyCardArea:init()
 
 		--- @type string | nil
 		overlay_key = nil,
+
+		--- @type table<string, table<string, TheFamilyTab>>
+		switch_overlays = {},
 	}
 	self.rendered_tabs = {
 		--- @type table<string, TheFamilyTab>
@@ -331,7 +334,14 @@ end
 function TheFamilyCardArea:_add_opened_tab(tab)
 	if tab and tab.key then
 		self.opened_tabs.dictionary[tab.key] = tab
-		if tab.type == "overlay" then
+		if tab.type == "switch" then
+			for _, switch_overlay in ipairs(tab.switch_overlays or {}) do
+				if not self.opened_tabs.switch_overlays[switch_overlay] then
+					self.opened_tabs.switch_overlays[switch_overlay] = {}
+				end
+				self.opened_tabs.switch_overlays[switch_overlay][tab.key] = tab
+			end
+		elseif tab.type == "overlay" then
 			self.opened_tabs.overlay_key = tab.key
 		end
 	end
@@ -339,6 +349,13 @@ end
 function TheFamilyCardArea:_remove_opened_tab(tab)
 	if tab and tab.key then
 		self.opened_tabs.dictionary[tab.key] = nil
+		if tab.type == "switch" then
+			for _, switch_overlay in ipairs(tab.switch_overlays or {}) do
+				if self.opened_tabs.switch_overlays[switch_overlay] then
+					self.opened_tabs.switch_overlays[switch_overlay][tab.key] = nil
+				end
+			end
+		end
 		if self.opened_tabs.overlay_key == tab.key then
 			self.opened_tabs.overlay_key = nil
 		end
@@ -366,6 +383,9 @@ function TheFamilyCardArea:_open(tab, without_callbacks)
 		if tab.type == "overlay" and not self:_close_overlay() then
 			return
 		end
+		if tab.type == "switch" then
+			self:_close_switch_overlays(tab)
+		end
 		self:_add_opened_tab(tab)
 		if not without_callbacks then
 			tab:highlight(tab.card)
@@ -390,6 +410,21 @@ function TheFamilyCardArea:_close_overlay()
 		return self:_close_and_unhighlight(TheFamily.tabs.dictionary[self.opened_tabs.overlay_key])
 	else
 		return true
+	end
+end
+function TheFamilyCardArea:_close_switch_overlays(tab)
+	for _, switch_overlay in ipairs(tab.switch_overlays or {}) do
+		if self.opened_tabs.switch_overlays[switch_overlay] then
+			local tabs_to_close = {}
+			for key, _tab in pairs(self.opened_tabs.switch_overlays[switch_overlay]) do
+				if key ~= tab.key then
+					table.insert(tabs_to_close, _tab)
+				end
+			end
+			for _, _tab in ipairs(tabs_to_close) do
+				_tab:close()
+			end
+		end
 	end
 end
 
