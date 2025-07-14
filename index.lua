@@ -54,12 +54,16 @@ function TheFamily.toggle_and_sort_tabs()
 		end
 	end
 	table.sort(TheFamily.tabs.list, function(a, b)
-		return not a.order or not b.order or a.order < b.order
+		return TheFamily.utils.first_non_zero(a.order - b.order, a.load_index - b.load_index) < 0
 	end)
 end
 function TheFamily.toggle_and_sort_tab_groups()
 	table.sort(TheFamily.tab_groups.list, function(a, b)
-		return not a.order or not b.order or a.order < b.order
+		return TheFamily.utils.first_non_zero(
+			(TheFamily.cc.groups_order[a.key] or 0) - (TheFamily.cc.groups_order[b.key] or 0),
+			a.order - b.order,
+			a.load_index - b.load_index
+		) < 0
 	end)
 	for _, group in ipairs(TheFamily.tab_groups.list) do
 		if not group:enabled() then
@@ -68,7 +72,7 @@ function TheFamily.toggle_and_sort_tab_groups()
 			group.is_enabled = true
 		end
 		table.sort(group.tabs.list, function(a, b)
-			return not a.order or not b.order or a.order < b.order
+			return TheFamily.utils.first_non_zero(a.order - b.order, a.load_index - b.load_index) < 0
 		end)
 		EMPTY(group.enabled_tabs.list)
 		EMPTY(group.enabled_tabs.dictionary)
@@ -81,7 +85,7 @@ function TheFamily.toggle_and_sort_tab_groups()
 			end
 		end
 		table.sort(group.enabled_tabs.list, function(a, b)
-			return not a.order or not b.order or a.order < b.order
+			return TheFamily.utils.first_non_zero(a.order - b.order, a.load_index - b.load_index) < 0
 		end)
 	end
 end
@@ -98,6 +102,17 @@ function TheFamily.toggle_and_sort_enabled_tabs()
 			end
 		end
 	end
+end
+function TheFamily.save_groups_order(area)
+	local result = {}
+	for _, card in ipairs(area.cards) do
+		local group = card.thefamily_group
+		result[group.key] = card.rank
+	end
+	TheFamily.config.current.groups_order = result
+	TheFamily.config.save()
+
+	TheFamily.rerender_area()
 end
 
 --- @param config TheFamilyGroupOptions

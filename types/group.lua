@@ -6,6 +6,7 @@
 --- @field enabled? fun(self: TheFamilyGroup): boolean Function which determines can tabs inside this group be created.
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
+--- @field load_index number
 --- @field tabs { list: TheFamilyTab[], dictionary: table<string, TheFamilyTab> }
 --- @field enabled_tabs { list: TheFamilyTab[], dictionary: table<string, TheFamilyTab> }
 --- @field is_enabled boolean

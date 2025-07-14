@@ -1,5 +1,7 @@
 TheFamilyTab = Object:extend()
 
+local load_index = 1
+
 --- @param params TheFamilyTabOptions
 function TheFamilyTab:init(params)
 	if params.key and TheFamily.tabs.dictionary[params.key] then
@@ -12,6 +14,10 @@ function TheFamilyTab:init(params)
 
 	self.key = params.key
 	self.order = params.order or #TheFamily.tabs.list
+	self.load_index = load_index
+	load_index = load_index + 1
+
+	self.original_mod = SMODS and SMODS.current_mod or nil
 
 	self.group_key = params.group_key or nil
 	self.group = nil

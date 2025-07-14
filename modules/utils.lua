@@ -106,3 +106,12 @@ function TheFamily.utils.table_copy_part(t, from_index, to_index)
 	end
 	return result
 end
+function TheFamily.utils.first_non_zero(...)
+	local values = { ... }
+	for _, value in ipairs(values) do
+		if value ~= 0 then
+			return value
+		end
+	end
+	return 0
+end

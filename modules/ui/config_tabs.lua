@@ -22,6 +22,59 @@ TheFamily.UI.get_config_tab_overall = function()
 		),
 	}
 end
+TheFamily.UI.get_config_tab_groups_order = function()
+	TheFamily.toggle_and_sort_tabs()
+	TheFamily.toggle_and_sort_tab_groups()
+	TheFamily.toggle_and_sort_enabled_tabs()
+
+	local area = TheFamily.UI.PARTS.create_groups_order_area()
+
+	for _, group in ipairs(TheFamily.tab_groups.list) do
+		local card = group:create_card(area)
+		if card then
+			area:emplace(card)
+		end
+	end
+
+	return {
+		{
+			n = G.UIT.R,
+			config = {
+				align = "cm",
+				pading = 0.05,
+			},
+			nodes = {
+				{
+					n = G.UIT.T,
+					config = {
+						text = "Rearrange cards to change tabs display order",
+						scale = 0.4,
+						colour = G.C.UI.TEXT_LIGHT,
+					},
+				},
+			},
+		},
+		TheFamily.UI.PARTS.create_separator_r(),
+		{
+			n = G.UIT.R,
+			config = {
+				align = "cm",
+				colour = adjust_alpha(G.C.BLACK, 0.5),
+				padding = 0.05,
+				r = 0.1,
+			},
+			nodes = {
+				{
+					n = G.UIT.O,
+					config = {
+						object = area,
+						align = "cm",
+					},
+				},
+			},
+		},
+	}
+end
 
 -- Tabs order
 
@@ -31,9 +84,15 @@ TheFamily.UI.PARTS.tabs_list = {
 			return TheFamily.UI.get_config_tab_overall()
 		end,
 	},
+	["Groups order"] = {
+		definition = function()
+			return TheFamily.UI.get_config_tab_groups_order()
+		end,
+	},
 }
 TheFamily.UI.PARTS.tabs_order = {
 	"Overall",
+	"Groups order",
 }
 
 -- Getters

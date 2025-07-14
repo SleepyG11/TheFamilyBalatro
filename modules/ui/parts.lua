@@ -76,4 +76,12 @@ TheFamily.UI.PARTS = {
 	create_separator_c = function(w)
 		return { n = G.UIT.C, config = { minw = w or 0.25 } }
 	end,
+
+	create_groups_order_area = function()
+		return CardArea(0, 0, G.CARD_W * 4, G.CARD_H, {
+			card_limit = 1e308,
+			type = "title_2",
+			highlight_limit = 1,
+		})
+	end,
 }

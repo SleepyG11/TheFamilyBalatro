@@ -107,6 +107,7 @@
 --- })
 --- ```
 --- @class TheFamilyTab: TheFamilyTabOptions
+--- @field load_index number
 --- @field group? TheFamilyGroup
 --- @field is_enabled boolean
 --- @field card? Card Card which represents tab
