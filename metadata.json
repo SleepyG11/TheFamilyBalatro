@@ -7,6 +7,6 @@
 	"prefix": "thefamily",
 	"main_file": "steamodded.lua",
 	"priority": 0,
-	"version": "0.1.1f",
+	"version": "0.1.1g",
 	"dependencies": []
 }
