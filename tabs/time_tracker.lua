@@ -127,7 +127,16 @@ TheFamily.own_tabs.time_tracker = {
 			}
 		end
 		return {
-			name = {},
+			name = {
+				{
+					n = G.UIT.T,
+					config = {
+						text = "Time info",
+						scale = 0.35,
+						colour = G.C.WHITE,
+					},
+				},
+			},
 			description = {
 				{
 					create_time_row({
@@ -162,8 +171,18 @@ TheFamily.own_tabs.time_tracker = {
 						ref_table = TheFamily.own_tabs.time_tracker,
 						ref_value = "current_hand_label",
 					}),
+					not card.highlighted and {
+						n = G.UIT.R,
+						config = { align = "cm", padding = 0.1 },
+						nodes = TheFamily.UI.localize_text({
+							"{C:inactive}Select to configure{}",
+						}, {
+							align = "cm",
+							scale = 0.8,
+						}),
+					} or nil,
 				},
-				{
+				card.highlighted and {
 					create_option_cycle({
 						options = { "Long 12h", "Long 24h", "Short 12h", "Short 24h" },
 						opt_callback = "thefamily_update_time_tracker_time_format",
@@ -172,11 +191,34 @@ TheFamily.own_tabs.time_tracker = {
 						scale = 0.6,
 						w = 4,
 					}),
-				},
+					{
+						n = G.UIT.R,
+						config = {
+							padding = 0.05,
+							r = 0.1,
+							colour = adjust_alpha(darken(G.C.BLACK, 0.1), 0.8),
+						},
+						nodes = {
+							create_toggle({
+								label = "Display time alert",
+								ref_table = TheFamily.cc.time_tracker,
+								ref_value = "show_time_alert",
+								scale = 0.5,
+								label_scale = 0.3,
+								callback = function(b)
+									G.FUNCS.thefamily_update_time_tracker_show_alert(b)
+								end,
+							}),
+						},
+					},
+				} or nil,
 			},
 		}
 	end,
 	create_UI_alert = function(card)
+		if G.STATE ~= G.STATES.HAND_PLAYED and not TheFamily.cc.time_tracker.show_time_alert then
+			return nil
+		end
 		return {
 			definition_function = function()
 				local info = TheFamily.UI.get_ui_values()
@@ -194,34 +236,38 @@ TheFamily.own_tabs.time_tracker = {
 			end,
 		}
 	end,
+
+	tab = TheFamily.create_tab({
+		key = "thefamily_time",
+		order = 0,
+		group_key = "thefamily_general",
+		center = "v_hieroglyph",
+		type = "switch",
+
+		front_label = function()
+			return {
+				text = "Time",
+			}
+		end,
+		update = function(defitinion, card, dt)
+			TheFamily.own_tabs.time_tracker.update(dt)
+		end,
+		alert = function(definition, card)
+			return TheFamily.own_tabs.time_tracker.create_UI_alert(card)
+		end,
+		popup = function(definition, card)
+			return TheFamily.own_tabs.time_tracker.create_UI_popup(card)
+		end,
+
+		keep_popup_when_highlighted = true,
+	}),
 }
-
-TheFamily.create_tab({
-	key = "thefamily_time",
-	order = 0,
-	group_key = "thefamily_default",
-	center = "v_hieroglyph",
-	type = "switch",
-
-	front_label = function()
-		return {
-			text = "Time",
-		}
-	end,
-	update = function(defitinion, card, dt)
-		TheFamily.own_tabs.time_tracker.update(dt)
-	end,
-	alert = function(definition, card)
-		return TheFamily.own_tabs.time_tracker.create_UI_alert(card)
-	end,
-	popup = function(definition, card)
-		return TheFamily.own_tabs.time_tracker.create_UI_popup(card)
-	end,
-
-	keep_popup_when_highlighted = true,
-})
 
 function G.FUNCS.thefamily_update_time_tracker_time_format(arg)
 	TheFamily.config.current.time_tracker.format = arg.to_key
+	TheFamily.config.save()
+end
+function G.FUNCS.thefamily_update_time_tracker_show_alert(b)
+	TheFamily.config.current.time_tracker.show_time_alert = b
 	TheFamily.config.save()
 end

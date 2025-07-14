@@ -68,6 +68,7 @@
 --- @field group_key string Unique key of group to be assigned for (including prefix)
 --- @field order? number Value user for sorting, from lowest to highest
 --- @field type? TheFamilyTabType
+--- @field switch_overlays? string[] When defined and `type = switch`, other tabs with same value will be closed (unless they're force highlighted)
 --- @field keep? boolean Should prevent tab from deselecting when another page is opened
 --- @field front? string Key from `G.P_CARDS` to set card's front
 --- @field center? TheFamilyTabCenterDefinition

@@ -1,6 +1,21 @@
 TheFamily = setmetatable({
-	version = "0.1.1f",
+	version = "0.1.1g",
 }, {})
+
+TheFamily.SWITCH_OVERLAYS = {
+	JOKERS = "vanilla_jokers",
+	CONSUMEABLES = "vanilla_consumeables",
+	DECK = "vanilla_deck",
+	TAGS = "vanilla_skip_tags",
+
+	SHOP = "vanilla_shop",
+	BOOSTER = "vanilla_booster",
+	BLINDS = "vanilla_blinds",
+	HAND = "vanilla_hand",
+	CASH_OUT = "vanilla_cashout",
+
+	UNDER_CONSUMEABLES = "not_taken_under_consumeables",
+}
 
 require("thefamily/utils")
 require("thefamily/config")

@@ -17,6 +17,7 @@ function TheFamilyTab:init(params)
 	self.group = nil
 
 	self.type = params.type or "overlay"
+	self.switch_overlays = (type(params.switch_overlays) == "table" and params.switch_overlays) or {}
 	self.keep = params.keep or false
 
 	self.front = params.front or nil
