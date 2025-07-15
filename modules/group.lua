@@ -43,52 +43,60 @@ function TheFamilyGroup:init(params)
 end
 
 function TheFamilyGroup:create_card(area)
-	local this = self
-	if not self.tabs.list[1] then
-		return nil
-	end
-	local center = self.center or self.tabs.list[1].center or "c_base"
-	local front = self.front or nil
+	local card
 
 	TheFamily.__prevent_used_jokers = true
-	if type(center) == "string" then
-		card = Card(
-			area.T.x + area.T.w / 2,
-			area.T.y,
-			G.CARD_W,
-			G.CARD_H,
-			front and G.P_CARDS[front] or nil,
-			G.P_CENTERS[center] or G.P_CENTERS.c_base,
-			{
-				bypass_discovery_center = true,
-				bypass_discovery_ui = true,
-				discover = false,
-			}
-		)
-	elseif type(center) == "function" then
-		card = center(self, area)
-			or Card(area.T.x + area.T.w / 2, area.T.y, G.CARD_W, G.CARD_H, nil, G.P_CENTERS.c_base, {
-				bypass_discovery_center = true,
-				bypass_discovery_ui = true,
-				discover = false,
-			})
+	if self.center or self.front then
+		if type(self.center) == "function" then
+			card = self:center(area)
+				or Card(area.T.x + area.T.w / 2, area.T.y, G.CARD_W, G.CARD_H, nil, G.P_CENTERS.c_base, {
+					bypass_discovery_center = true,
+					bypass_discovery_ui = true,
+					discover = false,
+				})
+		else
+			card = Card(
+				area.T.x + area.T.w / 2,
+				area.T.y,
+				G.CARD_W,
+				G.CARD_H,
+				self.front and G.P_CARDS[self.front] or nil,
+				G.P_CENTERS[self.center or ""] or G.P_CENTERS.c_base,
+				{
+					bypass_discovery_center = true,
+					bypass_discovery_ui = true,
+					discover = false,
+				}
+			)
+		end
+	elseif self.tabs.list[1] then
+		card = self.tabs.list[1]:create_card(area)
 	end
-	card.no_shadow = true
 	TheFamily.__prevent_used_jokers = nil
 
-	card.thefamily_group = self
+	if card then
+		card.thefamily_group = self
+	end
 
+	return card
+end
+
+function TheFamilyGroup:prepare_config_card(card)
+	if not card then
+		return
+	end
 	function card:align_h_popup()
 		return {}
 	end
 	function card:hover()
+		local group = self.thefamily_group
 		if not self.children.popup then
-			local current_mod = this.original_mod_id and SMODS and SMODS.Mods[this.original_mod_id]
-			local localization = TheFamily.utils.resolve_loc_txt(this.loc_txt)
+			local current_mod = group.original_mod_id and SMODS and SMODS.Mods[group.original_mod_id]
+			local localization = TheFamily.utils.resolve_loc_txt(group.loc_txt)
 			local title = localization.name or (current_mod and string.format("%s's group", current_mod.name)) or nil
 
-			local is_enabled = this:enabled()
-			local is_disabled_by_user = this:_disabled_by_user()
+			local is_enabled = group:enabled()
+			local is_disabled_by_user = group:_disabled_by_user()
 
 			local result_content = {
 				title and name_from_rows({
@@ -106,7 +114,7 @@ function TheFamilyGroup:create_card(area)
 						{
 							n = G.UIT.R,
 							config = { align = "cm" },
-							nodes = TheFamily.UI.localize_text(this.loc_txt.description, {
+							nodes = TheFamily.UI.localize_text(group.loc_txt.description, {
 								align = "cm",
 							}),
 						},
@@ -121,7 +129,7 @@ function TheFamilyGroup:create_card(area)
 								"Adds {C:attention}#1#{} tabs",
 							}, {
 								align = "cm",
-								vars = { #this.tabs.list },
+								vars = { #group.tabs.list },
 							}),
 						},
 						{
@@ -133,12 +141,12 @@ function TheFamilyGroup:create_card(area)
 								align = "cm",
 								vars = {
 									is_enabled and "Active" or "Inactive",
-									(not this.can_be_disabled) and "Cannot be disabled"
+									(not group.can_be_disabled) and "Cannot be disabled"
 										or (not is_disabled_by_user) and "Enabled"
 										or "Disabled",
 									colours = {
 										is_enabled and G.C.GREEN or G.C.MULT,
-										(not this.can_be_disabled) and G.C.FILTER
+										(not group.can_be_disabled) and G.C.FILTER
 											or (not is_disabled_by_user) and G.C.GREEN
 											or G.C.MULT,
 									},
@@ -269,6 +277,16 @@ function TheFamilyGroup:create_card(area)
 	card.debuff = self:_disabled_by_user()
 
 	return card
+end
+function TheFamilyGroup:emplace_config_card(card, area)
+	if area and card then
+		area:emplace(card)
+	end
+end
+function TheFamilyGroup:create_config_card(area)
+	if area then
+		self:emplace_config_card(self:prepare_config_card(self:create_card(area)), area)
+	end
 end
 
 function TheFamilyGroup:_add_tab(tab)

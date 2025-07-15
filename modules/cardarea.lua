@@ -626,11 +626,11 @@ function TheFamilyCardArea:create_page_cards()
 		for i = 1, ui_values.tabs_per_page do
 			if tabs_to_render[i] then
 				self.rendered_tabs.dictionary[tabs_to_render[i].key] = tabs_to_render[i]
-				tabs_to_render[i]:create_card(i + 2)
+				tabs_to_render[i]:create_tab_card(self, i + 2)
 			else
 				TheFamilyTab({
 					type = "filler",
-				}):create_card(i + 2)
+				}):create_tab_card(self, i + 2)
 			end
 		end
 	elseif ui_values.pagination_type == "scroll" then
@@ -646,7 +646,7 @@ function TheFamilyCardArea:create_page_cards()
 
 		for i = 1, #tabs_to_render do
 			self.rendered_tabs.dictionary[tabs_to_render[i].key] = tabs_to_render[i]
-			tabs_to_render[i]:create_card(i + 2)
+			tabs_to_render[i]:create_tab_card(self, i + 2)
 		end
 	end
 	self:calculate_parrallax()
@@ -655,22 +655,22 @@ function TheFamilyCardArea:create_page_cards()
 end
 function TheFamilyCardArea:create_initial_cards()
 	self:_init_core_tabs()
-	TheFamilyCardArea.core_tabs.mod_toggle:create_card(nil, true)
+	TheFamilyCardArea.core_tabs.mod_toggle:create_tab_card(self, nil, true)
 	TheFamilyTab({
 		type = "separator",
-	}):create_card(nil, true)
+	}):create_tab_card(self, nil, true)
 	local ui_values = TheFamily.UI.get_ui_values()
 	if ui_values.pagination_type == "page" then
 		for i = 1, ui_values.tabs_per_page do
 			TheFamilyTab({
 				type = "filler",
-			}):create_card(nil, true)
+			}):create_tab_card(self, nil, true)
 		end
 		TheFamilyTab({
 			type = "separator",
-		}):create_card(nil, true)
-		TheFamilyCardArea.core_tabs.prev_page:create_card(nil, true)
-		TheFamilyCardArea.core_tabs.next_page:create_card(nil, true)
+		}):create_tab_card(self, nil, true)
+		TheFamilyCardArea.core_tabs.prev_page:create_tab_card(self, nil, true)
+		TheFamilyCardArea.core_tabs.next_page:create_tab_card(self, nil, true)
 	elseif ui_values.pagination_type == "scroll" then
 		local items_to_render = 0
 		for _, group in ipairs(TheFamily.tab_groups.list) do
@@ -681,7 +681,7 @@ function TheFamilyCardArea:create_initial_cards()
 		for i = 1, items_to_render do
 			TheFamilyTab({
 				type = "filler",
-			}):create_card(nil, true)
+			}):create_tab_card(self, nil, true)
 		end
 	end
 	self:calculate_parrallax()

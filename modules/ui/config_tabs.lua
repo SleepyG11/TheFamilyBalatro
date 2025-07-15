@@ -28,10 +28,7 @@ TheFamily.UI.get_config_tab_groups_order = function()
 	local area = TheFamily.UI.PARTS.create_groups_order_area()
 
 	for _, group in ipairs(TheFamily.tab_groups.list) do
-		local card = group:create_card(area)
-		if card then
-			area:emplace(card)
-		end
+		group:create_config_card(area)
 	end
 
 	return {
