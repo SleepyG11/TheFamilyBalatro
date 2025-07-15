@@ -42,7 +42,6 @@ function TheFamilyTab:init(params)
 	self.click = only_function(params.click, self.click)
 
 	self.enabled = only_function(params.enabled, self.enabled)
-	self.is_enabled = false
 
 	self.card = nil
 
@@ -62,6 +61,9 @@ function TheFamilyTab:init(params)
 	end
 end
 
+function TheFamilyTab:_enabled()
+	return self:enabled()
+end
 function TheFamilyTab:enabled()
 	return true
 end

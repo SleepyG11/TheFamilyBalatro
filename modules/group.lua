@@ -24,7 +24,8 @@ function TheFamilyGroup:init(params)
 	self.front = params.front or nil
 
 	self.enabled = only_function(params.enabled, self.enabled)
-	self.is_enabled = false
+
+	self.can_be_disabled = params.can_be_disabled or false
 
 	self.tabs = {
 		list = {},
@@ -201,6 +202,9 @@ function TheFamilyGroup:_add_tab(tab)
 	self.tabs.dictionary[tab.key] = tab
 end
 
+function TheFamilyGroup:_enabled()
+	return not (self.can_be_disabled and TheFamily.cc.disabled_groups[self.key]) and self:enabled()
+end
 function TheFamilyGroup:enabled()
 	return true
 end

@@ -8,6 +8,7 @@ local default_config = {
 		show_time_alert = true,
 	},
 
+	disabled_groups = {},
 	groups_order = {},
 }
 

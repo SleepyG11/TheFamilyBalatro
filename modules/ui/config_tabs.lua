@@ -23,9 +23,7 @@ TheFamily.UI.get_config_tab_overall = function()
 	}
 end
 TheFamily.UI.get_config_tab_groups_order = function()
-	TheFamily.toggle_and_sort_tabs()
-	TheFamily.toggle_and_sort_tab_groups()
-	TheFamily.toggle_and_sort_enabled_tabs()
+	TheFamily.toggle_and_sort_tabs_and_groups()
 
 	local area = TheFamily.UI.PARTS.create_groups_order_area()
 

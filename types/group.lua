@@ -15,9 +15,9 @@
 --- @field enabled? fun(self: TheFamilyGroup): boolean Function which determines can tabs inside this group be created.
 --- @field original_mod_id? string
 --- @field loc_txt? table
+--- @field can_be_disabled? boolean
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
 --- @field load_index number
 --- @field tabs { list: TheFamilyTab[], dictionary: table<string, TheFamilyTab> }
 --- @field enabled_tabs { list: TheFamilyTab[], dictionary: table<string, TheFamilyTab> }
---- @field is_enabled boolean

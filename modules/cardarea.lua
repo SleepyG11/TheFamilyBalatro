@@ -301,7 +301,7 @@ function TheFamilyCardArea:draw()
 end
 function TheFamilyCardArea:update(dt)
 	for _, tab in ipairs(TheFamily.tabs.list) do
-		if tab.is_enabled and tab.key then
+		if tab:_enabled() and tab.key then
 			local is_opened = self:_is_tab_opened(tab)
 			if is_opened and not tab:_can_highlight() then
 				self:_close_and_unhighlight(tab)
@@ -604,7 +604,7 @@ function TheFamilyCardArea:create_page_cards()
 			if current_index >= end_index then
 				break
 			end
-			if group.is_enabled then
+			if group:_enabled() then
 				if #group.enabled_tabs.list + current_index < start_index then
 					current_index = current_index + #group.enabled_tabs.list
 				else
@@ -635,7 +635,7 @@ function TheFamilyCardArea:create_page_cards()
 		end
 	elseif ui_values.pagination_type == "scroll" then
 		for _, group in ipairs(TheFamily.tab_groups.list) do
-			if group.is_enabled then
+			if group:_enabled() then
 				for _, tab in ipairs(group.enabled_tabs.list) do
 					table.insert(tabs_to_render, tab)
 				end
@@ -674,7 +674,7 @@ function TheFamilyCardArea:create_initial_cards()
 	elseif ui_values.pagination_type == "scroll" then
 		local items_to_render = 0
 		for _, group in ipairs(TheFamily.tab_groups.list) do
-			if group.is_enabled then
+			if group:_enabled() then
 				items_to_render = items_to_render + #group.enabled_tabs.list
 			end
 		end

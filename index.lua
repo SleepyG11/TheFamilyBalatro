@@ -45,19 +45,13 @@ TheFamily.enabled_tabs = {
 	--- @type TheFamilyGroup[]
 	list = {},
 }
-function TheFamily.toggle_and_sort_tabs()
-	for _, tab in ipairs(TheFamily.tabs.list) do
-		if not tab:enabled() then
-			tab.is_enabled = false
-		else
-			tab.is_enabled = true
-		end
-	end
+
+function TheFamily.toggle_and_sort_tabs_and_groups()
+	EMPTY(TheFamily.enabled_tabs.list)
+	EMPTY(TheFamily.enabled_tabs.dictionary)
 	table.sort(TheFamily.tabs.list, function(a, b)
 		return TheFamily.utils.first_non_zero(a.order - b.order, a.load_index - b.load_index) < 0
 	end)
-end
-function TheFamily.toggle_and_sort_tab_groups()
 	table.sort(TheFamily.tab_groups.list, function(a, b)
 		return TheFamily.utils.first_non_zero(
 			(TheFamily.cc.groups_order[a.key] or 0) - (TheFamily.cc.groups_order[b.key] or 0),
@@ -66,36 +60,16 @@ function TheFamily.toggle_and_sort_tab_groups()
 		) < 0
 	end)
 	for _, group in ipairs(TheFamily.tab_groups.list) do
-		if not group:enabled() then
-			group.is_enabled = false
-		else
-			group.is_enabled = true
-		end
 		table.sort(group.tabs.list, function(a, b)
 			return TheFamily.utils.first_non_zero(a.order - b.order, a.load_index - b.load_index) < 0
 		end)
 		EMPTY(group.enabled_tabs.list)
 		EMPTY(group.enabled_tabs.dictionary)
-		if group.is_enabled then
+		if group:_enabled() then
 			for _, tab in ipairs(group.tabs.list) do
-				if tab.is_enabled then
+				if tab:_enabled() then
 					table.insert(group.enabled_tabs.list, tab)
 					group.enabled_tabs.dictionary[tab.key] = tab
-				end
-			end
-		end
-		table.sort(group.enabled_tabs.list, function(a, b)
-			return TheFamily.utils.first_non_zero(a.order - b.order, a.load_index - b.load_index) < 0
-		end)
-	end
-end
-function TheFamily.toggle_and_sort_enabled_tabs()
-	EMPTY(TheFamily.enabled_tabs.list)
-	EMPTY(TheFamily.enabled_tabs.dictionary)
-	for _, group in ipairs(TheFamily.tab_groups.list) do
-		if group.is_enabled then
-			for _, tab in ipairs(group.tabs.list) do
-				if tab.is_enabled then
 					table.insert(TheFamily.enabled_tabs.list, tab)
 					TheFamily.enabled_tabs.dictionary[tab.key] = tab
 				end
@@ -139,9 +113,7 @@ function TheFamily.emplace_steamodded()
 end
 
 function TheFamily.init()
-	TheFamily.toggle_and_sort_tabs()
-	TheFamily.toggle_and_sort_tab_groups()
-	TheFamily.toggle_and_sort_enabled_tabs()
+	TheFamily.toggle_and_sort_tabs_and_groups()
 
 	local ui_values = TheFamily.UI.get_ui_values()
 	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / ui_values.tabs_per_page)
@@ -156,9 +128,7 @@ function TheFamily.rerender_area()
 	if not TheFamily.UI.area or G.SETTINGS.paused then
 		return
 	end
-	TheFamily.toggle_and_sort_tabs()
-	TheFamily.toggle_and_sort_tab_groups()
-	TheFamily.toggle_and_sort_enabled_tabs()
+	TheFamily.toggle_and_sort_tabs_and_groups()
 
 	local ui_values = TheFamily.UI.get_ui_values()
 	if ui_values.position_on_screen == "bottom" or ui_values.position_on_screen == "top" then
