@@ -20,6 +20,9 @@ function TheFamilyGroup:init(params)
 	self.original_mod_id = params.original_mod_id or (SMODS and SMODS.current_mod and SMODS.current_mod.id) or nil
 	self.loc_txt = params.loc_txt or {}
 
+	self.center = params.center or nil
+	self.front = params.front or nil
+
 	self.enabled = only_function(params.enabled, self.enabled)
 	self.is_enabled = false
 
@@ -44,7 +47,7 @@ function TheFamilyGroup:create_card(area)
 		return nil
 	end
 	local center = self.center or self.tabs.list[1].center or "c_base"
-	local front = self.front or self.tabs.list[1].front or nil
+	local front = self.front or nil
 
 	TheFamily.__prevent_used_jokers = true
 	if type(center) == "string" then
@@ -80,11 +83,7 @@ function TheFamilyGroup:create_card(area)
 	function card:hover()
 		if not self.children.popup then
 			local current_mod = this.original_mod_id and SMODS and SMODS.Mods[this.original_mod_id]
-			local localization = (
-				this.loc_txt and this.loc_txt[G.SETTINGS.language]
-				or this.loc_txt["en-us"]
-				or this.loc_txt
-			) or {}
+			local localization = TheFamily.utils.resolve_loc_txt(this.loc_txt)
 			local title = localization.name or (current_mod and string.format("%s's group", current_mod.name)) or nil
 			local result_content = {
 				title and name_from_rows({

@@ -115,3 +115,16 @@ function TheFamily.utils.first_non_zero(...)
 	end
 	return 0
 end
+
+function TheFamily.utils.resolve_loc_txt(loc_txt)
+	return (
+		type(loc_txt) == "table"
+		and (
+			(G.SETTINGS.real_language and loc_txt[G.SETTINGS.real_language])
+			or loc_txt[G.SETTINGS.language]
+			or loc_txt["en-us"]
+			or loc_txt["default"]
+			or loc_txt
+		)
+	) or {}
+end
