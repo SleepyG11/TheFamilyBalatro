@@ -86,6 +86,10 @@ function TheFamilyGroup:create_card(area)
 			local current_mod = this.original_mod_id and SMODS and SMODS.Mods[this.original_mod_id]
 			local localization = TheFamily.utils.resolve_loc_txt(this.loc_txt)
 			local title = localization.name or (current_mod and string.format("%s's group", current_mod.name)) or nil
+
+			local is_enabled = this:enabled()
+			local is_disabled_by_user = this:_disabled_by_user()
+
 			local result_content = {
 				title and name_from_rows({
 					{
@@ -118,6 +122,27 @@ function TheFamilyGroup:create_card(area)
 							}, {
 								align = "cm",
 								vars = { #this.tabs.list },
+							}),
+						},
+						{
+							n = G.UIT.R,
+							config = { align = "cm" },
+							nodes = TheFamily.UI.localize_text({
+								"{V:1}#1#{} / {V:2}#2#{}",
+							}, {
+								align = "cm",
+								vars = {
+									is_enabled and "Active" or "Inactive",
+									(not this.can_be_disabled) and "Cannot be disabled"
+										or (not is_disabled_by_user) and "Enabled"
+										or "Disabled",
+									colours = {
+										is_enabled and G.C.GREEN or G.C.MULT,
+										(not this.can_be_disabled) and G.C.FILTER
+											or (not is_disabled_by_user) and G.C.GREEN
+											or G.C.MULT,
+									},
+								},
 							}),
 						},
 					},
@@ -190,9 +215,58 @@ function TheFamilyGroup:create_card(area)
 		end
 	end
 	function card:update_alert() end
-	function card:stop_drag()
-		TheFamily.save_groups_order(self.area)
+
+	function card:highlight(is_highlighted)
+		self.highlighted = is_highlighted
+		if self.highlighted and not self.children.use_button then
+			self.children.use_button = UIBox({
+				definition = {
+					n = G.UIT.ROOT,
+					config = { padding = 0, colour = G.C.CLEAR },
+					nodes = {
+						{
+							n = G.UIT.R,
+							config = {
+								ref_table = self,
+								r = 0.08,
+								padding = 0.1,
+								align = "bm",
+								minw = 0.5 * self.T.w - 0.15,
+								maxw = 0.9 * self.T.w - 0.15,
+								minh = 0.3 * self.T.h,
+								hover = true,
+								shadow = true,
+								colour = G.C.UI.BACKGROUND_INACTIVE,
+								button = "thefamily_user_toggle_group",
+								func = "thefamily_can_user_toggle_group",
+							},
+							nodes = {
+								{
+									n = G.UIT.T,
+									config = {
+										text = "Toggle",
+										colour = G.C.UI.TEXT_LIGHT,
+										scale = 0.45,
+										shadow = true,
+									},
+								},
+							},
+						},
+					},
+				},
+				config = {
+					align = "bmi",
+					offset = { x = 0, y = 0.65 },
+					parent = self,
+				},
+			})
+		elseif not self.highlighted and self.children.use_button then
+			self.children.use_button:remove()
+			self.children.use_button = nil
+		end
 	end
+
+	card.debuff = self:_disabled_by_user()
 
 	return card
 end
@@ -203,7 +277,13 @@ function TheFamilyGroup:_add_tab(tab)
 end
 
 function TheFamilyGroup:_enabled()
-	return not (self.can_be_disabled and TheFamily.cc.disabled_groups[self.key]) and self:enabled()
+	return not self:_disabled_by_user() and self:enabled()
+end
+function TheFamilyGroup:_disabled_by_user()
+	return self.can_be_disabled and TheFamily.cc.disabled_groups[self.key]
+end
+function TheFamilyGroup:_toggle_by_user()
+	TheFamily.cc.disabled_groups[self.key] = not TheFamily.cc.disabled_groups[self.key]
 end
 function TheFamilyGroup:enabled()
 	return true

@@ -38,3 +38,25 @@ function G.FUNCS.thefamily_change_scaling(arg)
 	TheFamily.config.save()
 	TheFamily.rerender_area()
 end
+function G.FUNCS.thefamily_can_user_toggle_group(e)
+	local card = e.config.ref_table
+	local group = card.thefamily_group
+	if group.can_be_disabled then
+		e.config.button = "thefamily_user_toggle_group"
+		if group:_disabled_by_user() then
+			e.config.colour = G.C.GREEN
+		else
+			e.config.colour = G.C.MULT
+		end
+	else
+		e.config.button = nil
+		e.config.colour = G.C.UI.BACKGROUND_INACTIVE
+	end
+end
+function G.FUNCS.thefamily_user_toggle_group(e)
+	local card = e.config.ref_table
+	card.thefamily_group:_toggle_by_user()
+	card.debuff = card.thefamily_group:_disabled_by_user()
+	TheFamily.config.save()
+	TheFamily.rerender_area()
+end

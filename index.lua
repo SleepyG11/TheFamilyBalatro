@@ -139,7 +139,7 @@ function TheFamily.rerender_area()
 	ui_values = TheFamily.UI.get_ui_values()
 
 	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / ui_values.tabs_per_page)
-	TheFamily.UI.page = math.min(TheFamily.UI.max_page, TheFamily.UI.page)
+	TheFamily.UI.page = math.max(1, math.min(TheFamily.UI.max_page, TheFamily.UI.page))
 
 	local rerender_data = TheFamily.UI.area:_save_rerender_data()
 	TheFamily.UI.area:safe_remove()

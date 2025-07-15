@@ -5,6 +5,15 @@ TheFamily.create_tab_group({
 	order = 0,
 
 	original_mod_id = "TheFamily",
+	loc_txt = {
+		name = "General tabs",
+		description = {
+			"Collection of some miscellaneous",
+			"tabs added by default",
+		},
+	},
+
+	can_be_disabled = true,
 })
 
 require("thefamily/tabs/time_tracker")

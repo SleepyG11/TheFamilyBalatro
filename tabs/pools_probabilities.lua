@@ -2,6 +2,8 @@ TheFamily.create_tab_group({
 	key = "thefamily_shop_pools",
 	order = 1,
 
+	can_be_disabled = true,
+
 	original_mod_id = "TheFamily", -- will be used SMODS mod id if not defined
 	loc_txt = {
 		name = "Shop probabilities",
