@@ -17,7 +17,7 @@ function TheFamilyTab:init(params)
 	self.load_index = load_index
 	load_index = load_index + 1
 
-	self.original_mod = SMODS and SMODS.current_mod or nil
+	self.original_mod_id = params.original_mod_id or (SMODS and SMODS.current_mod and SMODS.current_mod.id) or nil
 
 	self.group_key = params.group_key or nil
 	self.group = nil

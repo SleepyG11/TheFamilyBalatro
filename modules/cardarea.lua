@@ -485,6 +485,8 @@ function TheFamilyCardArea:_init_core_tabs()
 			type = "switch",
 			key = "thefamily_core",
 
+			original_mod_id = "TheFamily",
+
 			alert = function(self, card)
 				if not card.highlighted then
 					return nil
@@ -513,6 +515,9 @@ function TheFamilyCardArea:_init_core_tabs()
 		prev_page = TheFamilyTab({
 			key = "thefamily_next_page",
 			center = "c_base",
+
+			original_mod_id = "TheFamily",
+
 			front_label = function(definition, card)
 				return {
 					text = "Next page",
@@ -526,6 +531,9 @@ function TheFamilyCardArea:_init_core_tabs()
 		next_page = TheFamilyTab({
 			key = "thefamily_prev_page",
 			center = "c_base",
+
+			original_mod_id = "TheFamily",
+
 			front_label = function(definition, card)
 				return {
 					text = "Prev page",

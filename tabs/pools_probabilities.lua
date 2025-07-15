@@ -1,6 +1,16 @@
 TheFamily.create_tab_group({
 	key = "thefamily_shop_pools",
 	order = 1,
+
+	original_mod_id = "TheFamily", -- will be used SMODS mod id if not defined
+	loc_txt = {
+		name = "Shop probabilities",
+		description = {
+			"Collection of tabs which provides you details about",
+			"{C:green,E:1,S:1.1}probabilities{} to find any kind of stuff in {C:attention}Shop{}:",
+			"{C:mult}Rarities{}, {C:dark_edition}Editions{}, {C:blue}Seals{}, etc.",
+		},
+	},
 })
 
 TheFamily.own_tabs.pools_probabilities = {
@@ -1699,6 +1709,8 @@ TheFamily.own_tabs.pools_probabilities = {
 			center = "v_overstock_norm",
 			type = "switch",
 
+			original_mod_id = "TheFamily",
+
 			front_label = function()
 				return {
 					text = "Card types",
@@ -1729,6 +1741,8 @@ TheFamily.own_tabs.pools_probabilities = {
 			center = "v_hone",
 			type = "switch",
 
+			original_mod_id = "TheFamily",
+
 			front_label = function()
 				return {
 					text = "Rarities",
@@ -1758,6 +1772,8 @@ TheFamily.own_tabs.pools_probabilities = {
 			group_key = "thefamily_shop_pools",
 			center = "v_tarot_tycoon",
 			type = "switch",
+
+			original_mod_id = "TheFamily",
 
 			front_label = function()
 				return {
@@ -1795,6 +1811,8 @@ TheFamily.own_tabs.pools_probabilities = {
 			center = "v_illusion",
 			type = "switch",
 
+			original_mod_id = "TheFamily",
+
 			front_label = function()
 				return {
 					text = "Seals",
@@ -1830,6 +1848,8 @@ TheFamily.own_tabs.pools_probabilities = {
 			group_key = "thefamily_shop_pools",
 			center = "v_glow_up",
 			type = "switch",
+
+			original_mod_id = "TheFamily",
 
 			front_label = function()
 				return {
@@ -1867,6 +1887,8 @@ TheFamily.own_tabs.pools_probabilities = {
 			center = "v_overstock_plus",
 			type = "switch",
 
+			original_mod_id = "TheFamily",
+
 			front_label = function()
 				return {
 					text = "Booster types",
@@ -1896,6 +1918,8 @@ TheFamily.own_tabs.pools_probabilities = {
 			group_key = "thefamily_shop_pools",
 			center = "v_antimatter",
 			type = "switch",
+
+			original_mod_id = "TheFamily",
 
 			front_label = function()
 				return {

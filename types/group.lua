@@ -4,6 +4,8 @@
 --- @field key string Unique key. To prevent intersections, add prefix
 --- @field order? number Value user for sorting, from lowest to highest
 --- @field enabled? fun(self: TheFamilyGroup): boolean Function which determines can tabs inside this group be created.
+--- @field original_mod_id? string
+--- @field loc_txt? table
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
 --- @field load_index number

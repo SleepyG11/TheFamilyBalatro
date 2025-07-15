@@ -17,7 +17,8 @@ function TheFamilyGroup:init(params)
 	self.load_index = load_index
 	load_index = load_index + 1
 
-	self.original_mod = SMODS and SMODS.current_mod or nil
+	self.original_mod_id = params.original_mod_id or (SMODS and SMODS.current_mod and SMODS.current_mod.id) or nil
+	self.loc_txt = params.loc_txt or {}
 
 	self.enabled = only_function(params.enabled, self.enabled)
 	self.is_enabled = false
@@ -38,6 +39,7 @@ function TheFamilyGroup:init(params)
 end
 
 function TheFamilyGroup:create_card(area)
+	local this = self
 	if not self.tabs.list[1] then
 		return nil
 	end
@@ -75,8 +77,118 @@ function TheFamilyGroup:create_card(area)
 	function card:align_h_popup()
 		return {}
 	end
-	function card:hover() end
-	function card:stop_hover() end
+	function card:hover()
+		if not self.children.popup then
+			local current_mod = this.original_mod_id and SMODS and SMODS.Mods[this.original_mod_id]
+			local localization = (
+				this.loc_txt and this.loc_txt[G.SETTINGS.language]
+				or this.loc_txt["en-us"]
+				or this.loc_txt
+			) or {}
+			local title = localization.name or (current_mod and string.format("%s's group", current_mod.name)) or nil
+			local result_content = {
+				title and name_from_rows({
+					{
+						n = G.UIT.T,
+						config = {
+							text = title,
+							scale = 0.4,
+							colour = G.C.UI.TEXT_LIGHT,
+						},
+					},
+				}) or nil,
+				localization.description and desc_from_rows({
+					{
+						{
+							n = G.UIT.R,
+							config = { align = "cm" },
+							nodes = TheFamily.UI.localize_text(this.loc_txt.description, {
+								align = "cm",
+							}),
+						},
+					},
+				}) or nil,
+				desc_from_rows({
+					{
+						{
+							n = G.UIT.R,
+							config = { align = "cm" },
+							nodes = TheFamily.UI.localize_text({
+								"Adds {C:attention}#1#{} tabs",
+							}, {
+								align = "cm",
+								vars = { #this.tabs.list },
+							}),
+						},
+					},
+				}),
+			}
+			if current_mod and current_mod.display_name and current_mod.badge_colour then
+				table.insert(
+					result_content,
+					create_badge(current_mod.display_name, current_mod.bagde_colour, current_mod.badge_text_colour)
+				)
+			end
+
+			local popup = {
+				n = G.UIT.ROOT,
+				config = { align = "cm", colour = G.C.CLEAR },
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									padding = 0.05,
+									r = 0.12,
+									colour = lighten(G.C.JOKER_GREY, 0.5),
+									emboss = 0.07,
+								},
+								nodes = {
+									{
+										n = G.UIT.R,
+										config = {
+											align = "cm",
+											padding = 0.07,
+											r = 0.1,
+											colour = adjust_alpha(darken(G.C.BLACK, 0.1), 0.8),
+										},
+										nodes = result_content,
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			local popup_config = {
+				align = "tm",
+				offset = { x = 0, y = -0.25 },
+				parent = self,
+				instance_type = "POPUP",
+				xy_bond = "Strong",
+				r_bond = "Weak",
+				wh_bond = "Weak",
+			}
+
+			local box = UIBox({
+				definition = popup,
+				config = popup_config,
+			})
+
+			self.children.popup = box
+		end
+	end
+	function card:stop_hover()
+		if self.children.popup then
+			self.children.popup:remove()
+			self.children.popup = nil
+		end
+	end
 	function card:update_alert() end
 	function card:stop_drag()
 		TheFamily.save_groups_order(self.area)
