@@ -44,6 +44,7 @@ function TheFamilyTab:init(params)
 
 	self.enabled = only_function(params.enabled, self.enabled)
 	self.can_be_disabled = params.can_be_disabled or false
+	self.disabled_change = only_function(params.disabled_change, self.disabled_change)
 
 	self.card = nil
 
@@ -64,14 +65,22 @@ function TheFamilyTab:init(params)
 end
 
 function TheFamilyTab:_enabled()
-	return not self:_disabled_by_user() and self:enabled()
+	return not self:_disabled() and self:enabled()
+end
+function TheFamilyTab:_disabled()
+	return (self.group and self.group:_disabled_by_user()) or self:_disabled_by_user()
 end
 function TheFamilyTab:_disabled_by_user()
 	return (self.can_be_disabled or (self.group and self.group.can_be_disabled))
 		and TheFamily.cc.disabled_tabs[self.key]
 end
 function TheFamilyTab:_toggle_by_user()
+	local old_disabled = self:_disabled()
 	TheFamily.cc.disabled_tabs[self.key] = not TheFamily.cc.disabled_tabs[self.key]
+	local new_disabled = self:_disabled()
+	if not not new_disabled ~= not not old_disabled then
+		self:disabled_change(new_disabled, false)
+	end
 end
 function TheFamilyTab:enabled()
 	return true
@@ -840,3 +849,5 @@ function TheFamilyTab:close(without_callbacks)
 		TheFamily.UI.area:_close_and_unhighlight(self, without_callbacks)
 	end
 end
+
+function TheFamilyGroup:disabled_change(new_value, caused_by_group) end

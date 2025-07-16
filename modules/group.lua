@@ -26,6 +26,7 @@ function TheFamilyGroup:init(params)
 	self.enabled = only_function(params.enabled, self.enabled)
 
 	self.can_be_disabled = params.can_be_disabled or false
+	self.disabled_change = only_function(params.disabled_change, self.disabled_change)
 
 	self.tabs = {
 		list = {},
@@ -292,14 +293,33 @@ function TheFamilyGroup:_add_tab(tab)
 end
 
 function TheFamilyGroup:_enabled()
-	return not self:_disabled_by_user() and self:enabled()
+	return not self:_disabled() and self:enabled()
+end
+function TheFamilyGroup:_disabled()
+	return self:_disabled_by_user()
 end
 function TheFamilyGroup:_disabled_by_user()
 	return self.can_be_disabled and TheFamily.cc.disabled_groups[self.key]
 end
 function TheFamilyGroup:_toggle_by_user()
+	local old_disabled = self:_disabled()
+	local old_tabs_disabled = {}
+	for _, tab in ipairs(self.tabs.list) do
+		old_tabs_disabled[tab.key] = tab:_disabled()
+	end
 	TheFamily.cc.disabled_groups[self.key] = not TheFamily.cc.disabled_groups[self.key]
+	local new_disabled = self:_disabled()
+	if not not new_disabled ~= not not old_disabled then
+		self:disabled_change(new_disabled)
+	end
+	for _, tab in ipairs(self.tabs.list) do
+		local new_tab_disabled = tab:_disabled()
+		if not not new_tab_disabled ~= not not old_tabs_disabled[tab.key] then
+			tab:disabled_change(new_tab_disabled, true)
+		end
+	end
 end
 function TheFamilyGroup:enabled()
 	return true
 end
+function TheFamilyGroup:disabled_change(new_value) end
