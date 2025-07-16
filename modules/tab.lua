@@ -318,10 +318,7 @@ function TheFamilyTab:prepare_config_card(card)
 				}),
 			}
 			if current_mod and current_mod.display_name and current_mod.badge_colour then
-				table.insert(
-					result_content,
-					create_badge(current_mod.display_name, current_mod.bagde_colour, current_mod.badge_text_colour)
-				)
+				table.insert(result_content, TheFamily.UI.PARTS.create_mod_badge(current_mod))
 			end
 
 			local popup = {
