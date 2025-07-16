@@ -850,4 +850,4 @@ function TheFamilyTab:close(without_callbacks)
 	end
 end
 
-function TheFamilyGroup:disabled_change(new_value, caused_by_group) end
+function TheFamilyTab:disabled_change(new_value, caused_by_group) end
