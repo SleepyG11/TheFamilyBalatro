@@ -49,19 +49,39 @@ TheFamily.enabled_tabs = {
 function TheFamily.toggle_and_sort_tabs_and_groups()
 	EMPTY(TheFamily.enabled_tabs.list)
 	EMPTY(TheFamily.enabled_tabs.dictionary)
+
+	local get_tab_order = function(tab)
+		return tab
+				and tab.group
+				and TheFamily.cc.tabs_order[tab.group.key]
+				and TheFamily.cc.tabs_order[tab.group.key][tab.key]
+			or 0
+	end
+	local get_group_order = function(group)
+		return group and TheFamily.cc.groups_order[group.key] or 0
+	end
+
 	table.sort(TheFamily.tabs.list, function(a, b)
-		return TheFamily.utils.first_non_zero(a.order - b.order, a.load_index - b.load_index) < 0
+		return TheFamily.utils.first_non_zero(
+			get_tab_order(a) - get_tab_order(b),
+			a.order - b.order,
+			a.load_index - b.load_index
+		) < 0
 	end)
 	table.sort(TheFamily.tab_groups.list, function(a, b)
 		return TheFamily.utils.first_non_zero(
-			(TheFamily.cc.groups_order[a.key] or 0) - (TheFamily.cc.groups_order[b.key] or 0),
+			get_group_order(a) - get_group_order(b),
 			a.order - b.order,
 			a.load_index - b.load_index
 		) < 0
 	end)
 	for _, group in ipairs(TheFamily.tab_groups.list) do
 		table.sort(group.tabs.list, function(a, b)
-			return TheFamily.utils.first_non_zero(a.order - b.order, a.load_index - b.load_index) < 0
+			return TheFamily.utils.first_non_zero(
+				get_tab_order(a) - get_tab_order(b),
+				a.order - b.order,
+				a.load_index - b.load_index
+			) < 0
 		end)
 		EMPTY(group.enabled_tabs.list)
 		EMPTY(group.enabled_tabs.dictionary)
@@ -84,6 +104,18 @@ function TheFamily.save_groups_order(area)
 		result[group.key] = card.rank
 	end
 	TheFamily.config.current.groups_order = result
+	TheFamily.config.save()
+
+	TheFamily.rerender_area()
+end
+function TheFamily.save_tabs_order(area)
+	local group = area.cards[1].thefamily_tab.group
+	local result = {}
+	for _, card in ipairs(area.cards) do
+		local tab = card.thefamily_tab
+		result[tab.key] = card.rank
+	end
+	TheFamily.config.current.tabs_order[group.key] = result
 	TheFamily.config.save()
 
 	TheFamily.rerender_area()

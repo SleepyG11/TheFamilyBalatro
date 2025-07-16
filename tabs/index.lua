@@ -5,6 +5,8 @@ TheFamily.create_tab_group({
 	order = 0,
 
 	original_mod_id = "TheFamily",
+	center = "j_family",
+
 	loc_txt = {
 		name = "General tabs",
 		description = {

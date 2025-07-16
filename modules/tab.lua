@@ -18,6 +18,7 @@ function TheFamilyTab:init(params)
 	load_index = load_index + 1
 
 	self.original_mod_id = params.original_mod_id or (SMODS and SMODS.current_mod and SMODS.current_mod.id) or nil
+	self.loc_txt = params.loc_txt or {}
 
 	self.group_key = params.group_key or nil
 	self.group = nil
@@ -42,6 +43,7 @@ function TheFamilyTab:init(params)
 	self.click = only_function(params.click, self.click)
 
 	self.enabled = only_function(params.enabled, self.enabled)
+	self.can_be_disabled = params.can_be_disabled or false
 
 	self.card = nil
 
@@ -62,7 +64,14 @@ function TheFamilyTab:init(params)
 end
 
 function TheFamilyTab:_enabled()
-	return self:enabled()
+	return not self:_disabled_by_user() and self:enabled()
+end
+function TheFamilyTab:_disabled_by_user()
+	return (self.can_be_disabled or (self.group and self.group.can_be_disabled))
+		and TheFamily.cc.disabled_tabs[self.key]
+end
+function TheFamilyTab:_toggle_by_user()
+	TheFamily.cc.disabled_tabs[self.key] = not TheFamily.cc.disabled_tabs[self.key]
 end
 function TheFamilyTab:enabled()
 	return true
@@ -234,6 +243,199 @@ function TheFamilyTab:remove_tab_card()
 end
 
 function TheFamilyTab:prepare_config_card(card)
+	if not card then
+		return
+	end
+	function card:align_h_popup()
+		return {}
+	end
+	function card:hover()
+		local tab = self.thefamily_tab
+		if not self.children.popup then
+			local current_mod = tab.original_mod_id and SMODS and SMODS.Mods[tab.original_mod_id]
+			local localization = TheFamily.utils.resolve_loc_txt(tab.loc_txt)
+			local title = localization.name or nil
+			if not title then
+				local front_label = tab:front_label(self)
+				if front_label.text then
+					title = front_label.text
+				end
+			end
+			if not title then
+				title = (current_mod and string.format("%s's tab", current_mod.name))
+			end
+
+			local is_enabled = tab:enabled()
+			local is_disabled_by_user = tab:_disabled_by_user()
+			local can_be_disabled = tab.can_be_disabled or (tab.group and tab.group.can_be_disabled)
+
+			local result_content = {
+				title and name_from_rows({
+					{
+						n = G.UIT.T,
+						config = {
+							text = title,
+							scale = 0.4,
+							colour = G.C.UI.TEXT_LIGHT,
+						},
+					},
+				}) or nil,
+				localization.description and desc_from_rows({
+					{
+						{
+							n = G.UIT.R,
+							config = { align = "cm" },
+							nodes = TheFamily.UI.localize_text(localization.description, {
+								align = "cm",
+							}),
+						},
+					},
+				}) or nil,
+				desc_from_rows({
+					{
+						{
+							n = G.UIT.R,
+							config = { align = "cm" },
+							nodes = TheFamily.UI.localize_text({
+								"{V:1}#1#{} / {V:2}#2#{}",
+							}, {
+								align = "cm",
+								vars = {
+									is_enabled and "Active" or "Inactive",
+									(not can_be_disabled) and "Cannot be disabled"
+										or (not is_disabled_by_user) and "Enabled"
+										or "Disabled",
+									colours = {
+										is_enabled and G.C.GREEN or G.C.MULT,
+										(not can_be_disabled) and G.C.FILTER
+											or (not is_disabled_by_user) and G.C.GREEN
+											or G.C.MULT,
+									},
+								},
+							}),
+						},
+					},
+				}),
+			}
+			if current_mod and current_mod.display_name and current_mod.badge_colour then
+				table.insert(
+					result_content,
+					create_badge(current_mod.display_name, current_mod.bagde_colour, current_mod.badge_text_colour)
+				)
+			end
+
+			local popup = {
+				n = G.UIT.ROOT,
+				config = { align = "cm", colour = G.C.CLEAR },
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									padding = 0.05,
+									r = 0.12,
+									colour = lighten(G.C.JOKER_GREY, 0.5),
+									emboss = 0.07,
+								},
+								nodes = {
+									{
+										n = G.UIT.R,
+										config = {
+											align = "cm",
+											padding = 0.07,
+											r = 0.1,
+											colour = adjust_alpha(darken(G.C.BLACK, 0.1), 0.8),
+										},
+										nodes = result_content,
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			local popup_config = {
+				align = "tm",
+				offset = { x = 0, y = -0.25 },
+				parent = self,
+				instance_type = "POPUP",
+				xy_bond = "Strong",
+				r_bond = "Weak",
+				wh_bond = "Weak",
+			}
+
+			local box = UIBox({
+				definition = popup,
+				config = popup_config,
+			})
+
+			self.children.popup = box
+		end
+	end
+	function card:stop_hover()
+		if self.children.popup then
+			self.children.popup:remove()
+			self.children.popup = nil
+		end
+	end
+	function card:update_alert() end
+	function card:highlight(is_highlighted)
+		self.highlighted = is_highlighted
+		if self.highlighted and not self.children.use_button then
+			self.children.use_button = UIBox({
+				definition = {
+					n = G.UIT.ROOT,
+					config = { padding = 0, colour = G.C.CLEAR },
+					nodes = {
+						{
+							n = G.UIT.R,
+							config = {
+								ref_table = self,
+								r = 0.08,
+								padding = 0.1,
+								align = "bm",
+								minw = 0.5 * self.T.w - 0.15,
+								maxw = 0.9 * self.T.w - 0.15,
+								minh = 0.3 * self.T.h,
+								hover = true,
+								shadow = true,
+								colour = G.C.UI.BACKGROUND_INACTIVE,
+								button = "thefamily_user_toggle_tab",
+								func = "thefamily_can_user_toggle_tab",
+							},
+							nodes = {
+								{
+									n = G.UIT.T,
+									config = {
+										text = "Toggle",
+										colour = G.C.UI.TEXT_LIGHT,
+										scale = 0.45,
+										shadow = true,
+									},
+								},
+							},
+						},
+					},
+				},
+				config = {
+					align = "bmi",
+					offset = { x = 0, y = 0.65 },
+					parent = self,
+				},
+			})
+		elseif not self.highlighted and self.children.use_button then
+			self.children.use_button:remove()
+			self.children.use_button = nil
+		end
+	end
+
+	card.debuff = self:_disabled_by_user()
+
 	return card
 end
 function TheFamilyTab:emplace_config_card(card, area)

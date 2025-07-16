@@ -114,7 +114,7 @@ function TheFamilyGroup:prepare_config_card(card)
 						{
 							n = G.UIT.R,
 							config = { align = "cm" },
-							nodes = TheFamily.UI.localize_text(group.loc_txt.description, {
+							nodes = TheFamily.UI.localize_text(localization.description, {
 								align = "cm",
 							}),
 						},

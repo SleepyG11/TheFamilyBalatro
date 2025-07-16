@@ -26,9 +26,26 @@ TheFamily.UI.get_config_tab_groups_order = function()
 	TheFamily.toggle_and_sort_tabs_and_groups()
 
 	local area = TheFamily.UI.PARTS.create_groups_order_area()
+	local tabs_area = TheFamily.UI.PARTS.create_tabs_order_area()
 
 	for _, group in ipairs(TheFamily.tab_groups.list) do
 		group:create_config_card(area)
+	end
+
+	local old_add_to_highlighted = area.add_to_highlighted
+	function area:add_to_highlighted(card, silent)
+		old_add_to_highlighted(self, card, silent)
+		remove_all(tabs_area.cards)
+		local group = card.thefamily_group
+		for _, tab in ipairs(group.tabs.list) do
+			tab:create_config_card(tabs_area)
+		end
+	end
+
+	local old_remove_from_highlighted = area.remove_from_highlighted
+	function area:remove_from_highlighted(card)
+		old_remove_from_highlighted(self, card)
+		remove_all(tabs_area.cards)
 	end
 
 	return {
@@ -63,6 +80,25 @@ TheFamily.UI.get_config_tab_groups_order = function()
 					n = G.UIT.O,
 					config = {
 						object = area,
+						align = "cm",
+					},
+				},
+			},
+		},
+		TheFamily.UI.PARTS.create_separator_r(),
+		{
+			n = G.UIT.R,
+			config = {
+				align = "cm",
+				colour = adjust_alpha(G.C.BLACK, 0.5),
+				padding = 0.05,
+				r = 0.1,
+			},
+			nodes = {
+				{
+					n = G.UIT.O,
+					config = {
+						object = tabs_area,
 						align = "cm",
 					},
 				},

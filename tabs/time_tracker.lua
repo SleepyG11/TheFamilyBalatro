@@ -244,6 +244,13 @@ TheFamily.own_tabs.time_tracker = {
 		center = "v_hieroglyph",
 		type = "switch",
 
+		loc_txt = {
+			description = {
+				"Real time display and info about",
+				"current session/hand time duration",
+			},
+		},
+
 		front_label = function()
 			return {
 				text = "Time",

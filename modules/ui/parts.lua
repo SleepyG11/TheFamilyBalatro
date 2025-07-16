@@ -78,7 +78,7 @@ TheFamily.UI.PARTS = {
 	end,
 
 	create_groups_order_area = function()
-		local area = CardArea(0, 0, G.CARD_W * 4, G.CARD_H, {
+		local area = CardArea(0, 0, G.CARD_W * 5, G.CARD_H, {
 			card_limit = 1e308,
 			type = "title_2",
 			highlight_limit = 1,
@@ -161,6 +161,126 @@ TheFamily.UI.PARTS = {
 			card:highlight(true)
 			if not silent then
 				play_sound("cardSlide1")
+			end
+		end
+		return area
+	end,
+	create_tabs_order_area = function()
+		local area = CardArea(0, 0, G.CARD_W * 5, G.CARD_H, {
+			card_limit = 1e308,
+			type = "title_2",
+			highlight_limit = 1,
+		})
+		area.children.info_line = UIBox({
+			definition = {
+				n = G.UIT.ROOT,
+				config = { colour = G.C.CLEAR, align = "cm" },
+				nodes = {
+					{
+						n = G.UIT.T,
+						config = {
+							text = "Select group to see tabs list here",
+							scale = 0.4,
+							colour = G.C.UI.TEXT_INACTIVE,
+						},
+					},
+				},
+			},
+			config = {
+				parent = area,
+				align = "cm",
+				offset = {
+					x = 0,
+					y = 0,
+				},
+			},
+		})
+		function area:can_highlight()
+			return true
+		end
+		function area:set_ranks()
+			for k, card in ipairs(self.cards) do
+				card.rank = k
+				card.states.collide.can = true
+				card.states.drag.can = true
+			end
+		end
+		function area:update(dt)
+			self.config.temp_limit = math.max(#self.cards, self.config.card_limit)
+			self.config.card_count = #self.cards
+			self:set_ranks()
+			self.children.info_line.states.visible = self.config.card_count == 0
+		end
+		function area:align_cards()
+			-- copypaste vanilla code, it's just easier
+			for k, card in ipairs(self.cards) do
+				if not card.states.drag.is then
+					card.T.r = 0.1 * (-#self.cards / 2 - 0.5 + k) / #self.cards
+						+ (G.SETTINGS.reduced_motion and 0 or 1) * 0.02 * math.sin(2 * G.TIMERS.REAL + card.T.x)
+					local max_cards = math.max(#self.cards, self.config.temp_limit)
+					card.T.x = self.T.x
+						+ (self.T.w - self.card_w) * ((k - 1) / math.max(max_cards - 1, 1) - 0.5 * (#self.cards - max_cards) / math.max(
+							max_cards - 1,
+							1
+						))
+						+ 0.5 * (self.card_w - card.T.w)
+					if
+						#self.cards > 2
+						or (#self.cards > 1 and self == G.consumeables)
+						or (#self.cards > 1 and self.config.spread)
+					then
+						card.T.x = self.T.x
+							+ (self.T.w - self.card_w) * ((k - 1) / (#self.cards - 1))
+							+ 0.5 * (self.card_w - card.T.w)
+					elseif #self.cards > 1 and self ~= G.consumeables then
+						card.T.x = self.T.x
+							+ (self.T.w - self.card_w) * ((k - 0.5) / #self.cards)
+							+ 0.5 * (self.card_w - card.T.w)
+					else
+						card.T.x = self.T.x + self.T.w / 2 - self.card_w / 2 + 0.5 * (self.card_w - card.T.w)
+					end
+					local highlight_height = G.HIGHLIGHT_H / 2
+					if not card.highlighted then
+						highlight_height = 0
+					end
+					card.T.y = self.T.y
+						+ self.T.h / 2
+						- card.T.h / 2
+						- highlight_height
+						+ (G.SETTINGS.reduced_motion and 0 or 1) * 0.03 * math.sin(0.666 * G.TIMERS.REAL + card.T.x)
+					card.T.x = card.T.x + card.shadow_parrallax.x / 30
+				end
+			end
+			table.sort(self.cards, function(a, b)
+				return a.T.x + a.T.w / 2 - 100 * (a.pinned and a.sort_id or 0)
+					< b.T.x + b.T.w / 2 - 100 * (b.pinned and b.sort_id or 0)
+			end)
+			local is_updated = false
+			for k, card in ipairs(self.cards) do
+				if card.rank and card.rank ~= k then
+					is_updated = true
+				end
+				card.rank = k
+			end
+			if is_updated then
+				TheFamily.save_tabs_order(self)
+			end
+		end
+		function area:add_to_highlighted(card, silent)
+			if self.highlighted[1] then
+				self:remove_from_highlighted(self.highlighted[1])
+			end
+			self.highlighted[#self.highlighted + 1] = card
+			card:highlight(true)
+			if not silent then
+				play_sound("cardSlide1")
+			end
+		end
+		local old_draw = area.draw
+		function area:draw()
+			old_draw(self)
+			if self.children.info_line then
+				self.children.info_line:draw()
 			end
 		end
 		return area

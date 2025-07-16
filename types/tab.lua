@@ -84,6 +84,7 @@
 --- @field update? fun(self: TheFamilyTab, card?: Card, dt: number) Update function. `dt` affected by game speed. Called for every enabled tab every frame. Callback can be called without card object if tab is not rendered on current page
 --- @field enabled? fun(self: TheFamilyTab): boolean Function which determines can this tab be created.
 --- @field original_mod_id? string
+--- @field loc_txt? table
 --- @field can_be_disabled? boolean
 
 --- Class which handles all tab's logic and rendering

@@ -10,6 +10,9 @@ local default_config = {
 
 	disabled_groups = {},
 	groups_order = {},
+
+	disabled_tabs = {},
+	tabs_order = {},
 }
 
 TheFamily.config = {
@@ -39,6 +42,7 @@ TheFamily.config = {
 			local unpacked = STR_UNPACK(lovely_mod_config)
 			TheFamily.config.current = TheFamily.utils.table_merge(TheFamily.config.current, unpacked)
 			TheFamily.config.current.groups_order = unpacked.groups_order or {}
+			TheFamily.config.current.tabs_order = unpacked.tabs_order or {}
 		end
 		TheFamily.cc = TheFamily.config.current
 	end,
