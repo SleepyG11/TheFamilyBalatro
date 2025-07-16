@@ -109,16 +109,11 @@ function TheFamilyCardArea:set_card_position(card, index, force_position)
 	local is_any_card_hovered = self.thefamily_is_any_card_hovered
 
 	local highlight_dx = 0
-	if index == 1 then
-		-- Always visible
-		highlight_dx = card.highlighted and -0.2 or 0
+	if card.highlighted then
+		-- Visible only if highlighted, but only on a half I guess
+		highlight_dx = is_first_card_selected and -0.3 or is_any_card_hovered and -0.2 or 0
 	else
-		if card.highlighted then
-			-- Visible only if highlighted, but only on a half I guess
-			highlight_dx = is_first_card_selected and -0.3 or is_any_card_hovered and -0.2 or 0
-		else
-			highlight_dx = is_first_card_selected and -0.2 or is_any_card_hovered and 0 or 0.2
-		end
+		highlight_dx = is_first_card_selected and -0.2 or is_any_card_hovered and 0 or 0.2
 	end
 	if card.states.hover.is then
 		highlight_dx = highlight_dx - 0.075

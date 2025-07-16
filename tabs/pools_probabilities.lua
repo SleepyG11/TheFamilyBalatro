@@ -1718,7 +1718,7 @@ TheFamily.own_tabs.pools_probabilities = {
 
 			front_label = function()
 				return {
-					name = "Card types",
+					text = "Card types",
 				}
 			end,
 			popup = function(definition, card)
