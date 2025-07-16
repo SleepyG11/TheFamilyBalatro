@@ -121,13 +121,9 @@ function TheFamily.save_tabs_order(area)
 	TheFamily.rerender_area()
 end
 
---- @param config TheFamilyGroupOptions
---- @return TheFamilyGroup
 function TheFamily.create_tab_group(config)
 	return TheFamilyGroup(config)
 end
---- @param config TheFamilyTabOptions
---- @return TheFamilyTab
 function TheFamily.create_tab(config)
 	return TheFamilyTab(config)
 end

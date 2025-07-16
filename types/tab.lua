@@ -80,19 +80,37 @@
 --- @field force_highlight? fun(self: TheFamilyTab, card?: Card): boolean Function which controls should card be highlighted. Controlled by `can_highlight()`. Only works for `type = switch`. When value will change to `true`, card will automatically highlight. Callback can be called without card object if tab is selected but not rendered in current page
 --- @field highlight? fun(self: TheFamilyTab, card?: Card) Callback when card is highlighted. Can be called without card object when opens but not rendered in current page
 --- @field unhighlight? fun(self: TheFamilyTab, card?: Card) Callback when card is unhighlighted. Can be called without card object when closes but not rendered in current page
---- @field click? fun(self: TheFamilyTab, card: Card): boolean Callback when card is clicked. If callback returns `true`, other events will not be fired (ex. card highlight, tab selection)
+--- @field click? fun(self: TheFamilyTab, card: Card): boolean | nil Callback when card is clicked. If callback returns `true`, other events will not be fired (ex. card highlight, tab selection)
 --- @field update? fun(self: TheFamilyTab, card?: Card, dt: number) Update function. `dt` affected by game speed. Called for every enabled tab every frame. Callback can be called without card object if tab is not rendered on current page
 --- @field enabled? fun(self: TheFamilyTab): boolean Function which determines can this tab be created.
---- @field loc_txt? table SMODS-like localization definition. See https://github.com/Steamodded/smods/wiki/Localization#loc_txt
+--- @field loc_txt? table SMODS-like localization definition with `name` and `text` fields. See https://github.com/Steamodded/smods/wiki/Localization#loc_txt
 --- @field original_mod_id? string Mod id this tab belongs to. Use only when your mod is not require SMODS. Default is `SMODS.current_mod.id`
 --- @field can_be_disabled? boolean Determines can this tab be disabled in mod config. Default is `false`
---- @field disabled_change? fun(self: TheFamilyTab, new_value: boolean, caused_by_group: boolean) Callback when tab is enabled/disabled by player in mod config. Ignores `TheFamilyTab:enabled()`
+--- @field disabled_change? fun(self: TheFamilyTab, new_value: boolean, caused_by_group: boolean) Callback when tab is enabled/disabled by player in mod config. Ignores `TheFamilyTab:enabled()`. Can be called in main menu too (from SMODS config page)
 
 --- Class which handles all tab's logic and rendering
+--- @class TheFamilyTab: TheFamilyTabOptions
+--- @field load_index number
+--- @field group? TheFamilyGroup
+--- @field card? Card Card which represents tab
+--- @field rerender_front_label fun() Function to manually rerender front_label
+--- @field rerender_popup fun() Function to manually rerender popup
+--- @field rerender_alert fun() Function to manually rerender alert
+--- @field open fun(self: TheFamilyTab, without_callbacks?: boolean) Manually open tab. All checks applied. If `without_callbacks = true`, highlight events will not be fired
+--- @field close fun(self: TheFamilyTab, without_callbacks?: boolean) Manually close tab. All checks applied. If `without_callbacks = true`, unhighlight events will not be fired
+
+--- Create a new tab
 --- ```lua
 --- TheFamily.create_tab({
 ---     key = "thefamily_example",
 ---     group_key = "thefamily_example_group",
+---
+---     loc_txt = {
+---         name = "Run info shortcut",
+---         text = {
+---             "Example tab which opens {C:attention}Run info{}"
+---         }
+---     },
 ---
 ---     center = "j_shortcut",
 ---
@@ -110,12 +128,6 @@
 ---     end,
 --- })
 --- ```
---- @class TheFamilyTab: TheFamilyTabOptions
---- @field load_index number
---- @field group? TheFamilyGroup
---- @field card? Card Card which represents tab
---- @field rerender_front_label fun() Function to manually rerender front_label
---- @field rerender_popup fun() Function to manually rerender popup
---- @field rerender_alert fun() Function to manually rerender alert
---- @field open fun(without_callbacks?: boolean) Manually open tab. All checks applied. If `without_callbacks = true`, highlight events will not be fired
---- @field close fun(without_callbacks?: boolean) Manually close tab. All checks applied. If `without_callbacks = true`, unhighlight events will not be fired
+--- @param params TheFamilyTabOptions
+--- @return TheFamilyTab
+function TheFamily.create_tab(params) end
