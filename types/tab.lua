@@ -83,9 +83,9 @@
 --- @field click? fun(self: TheFamilyTab, card: Card): boolean Callback when card is clicked. If callback returns `true`, other events will not be fired (ex. card highlight, tab selection)
 --- @field update? fun(self: TheFamilyTab, card?: Card, dt: number) Update function. `dt` affected by game speed. Called for every enabled tab every frame. Callback can be called without card object if tab is not rendered on current page
 --- @field enabled? fun(self: TheFamilyTab): boolean Function which determines can this tab be created.
---- @field original_mod_id? string
---- @field loc_txt? table
---- @field can_be_disabled? boolean
+--- @field loc_txt? table SMODS-like localization definition. See https://github.com/Steamodded/smods/wiki/Localization#loc_txt
+--- @field original_mod_id? string Mod id this tab belongs to. Use only when your mod is not require SMODS. Default is `SMODS.current_mod.id`
+--- @field can_be_disabled? boolean Determines can this tab be disabled in mod config. Default is `false`
 
 --- Class which handles all tab's logic and rendering
 --- ```lua

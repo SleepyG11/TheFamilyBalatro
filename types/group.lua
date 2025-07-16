@@ -13,9 +13,9 @@
 --- @field front? string Key from `G.P_CARDS` to set card's front
 --- @field center? TheFamilyGroupCenterDefinition
 --- @field enabled? fun(self: TheFamilyGroup): boolean Function which determines can tabs inside this group be created.
---- @field original_mod_id? string
---- @field loc_txt? table
---- @field can_be_disabled? boolean
+--- @field loc_txt? table SMODS-like localization definition. See https://github.com/Steamodded/smods/wiki/Localization#loc_txt
+--- @field original_mod_id? string Mod id this group belongs to. Use only when your mod is not require SMODS. Default is `SMODS.current_mod.id`
+--- @field can_be_disabled? boolean Determines can this group be disabled in mod config. If `true`, all tabs inside this group can be disabled aswell. Default is `false`
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
 --- @field load_index number

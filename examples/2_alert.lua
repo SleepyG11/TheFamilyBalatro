@@ -16,6 +16,25 @@ TheFamily.create_tab({
 	-- Let's use mentioned deck as our card
 	center = "b_black",
 
+	loc_txt = {
+		["en-us"] = {
+			name = "Joker slots",
+			descriptions = {
+				"Displays amount of joker",
+				"slots available",
+			},
+		},
+		["ru"] = {
+			name = "Cлоты под джокеров",
+			description = {
+				"Показывает количество свободных",
+				"слотов под джокеров",
+			},
+		},
+	},
+
+	can_be_disabled = true,
+
 	front_label = function()
 		return {
 			text = "Joker slots",
