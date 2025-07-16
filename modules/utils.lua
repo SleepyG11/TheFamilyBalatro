@@ -128,3 +128,7 @@ function TheFamily.utils.resolve_loc_txt(loc_txt)
 		)
 	) or {}
 end
+
+function TheFamily.utils.merge_localization(ref_table, ref_value, loc_txt)
+	ref_table[ref_value] = TheFamily.utils.table_merge(ref_table[ref_value] or {}, loc_txt)
+end

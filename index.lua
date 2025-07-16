@@ -177,6 +177,17 @@ function TheFamily.rerender_area()
 	TheFamily.UI.area:safe_remove()
 	TheFamilyCardArea():init_cards(rerender_data)
 end
+function TheFamily.process_loc_text()
+	G.localization.descriptions["TheFamily_Group"] = G.localization.descriptions["TheFamily_Group"] or {}
+	G.localization.descriptions["TheFamily_Tab"] = G.localization.descriptions["TheFamily_Tab"] or {}
+
+	for _, group in ipairs(TheFamily.tab_groups.list) do
+		group:process_loc_text()
+	end
+	for _, tab in ipairs(TheFamily.tabs.list) do
+		tab:process_loc_text()
+	end
+end
 
 ------------------------------
 
@@ -192,6 +203,31 @@ local start_run_ref = Game.start_run
 function Game:start_run(...)
 	start_run_ref(self, ...)
 	TheFamily.init()
+end
+
+local init_localization_ref = init_localization
+function init_localization(...)
+	if not G.localization.__thefamily_injected then
+		TheFamily.process_loc_text()
+		-- local en_loc = require("handy/localization/en-us")
+		-- TheFamily.utils.table_merge(G.localization, en_loc)
+		-- TheFamily.UI.cache_config_dictionary_search()
+		-- if G.SETTINGS.language ~= "en-us" then
+		-- local success, current_loc = pcall(function()
+		-- 	return require("handy/localization/" .. G.SETTINGS.language)
+		-- end)
+		-- local missing_keys = TheFamily.utils.deep_missing_keys(en_loc, current_loc)
+		-- for _, missing_key in ipairs(missing_keys) do
+		-- 	print("Missing key: " .. missing_key)
+		-- end
+		-- if success and current_loc then
+		-- 	TheFamily.utils.table_merge(G.localization, current_loc)
+		-- 	TheFamily.UI.cache_config_dictionary_search(true)
+		-- end
+		-- end
+		G.localization.__thefamily_injected = true
+	end
+	return init_localization_ref(...)
 end
 
 ------------------------------

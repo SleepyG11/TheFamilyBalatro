@@ -323,3 +323,13 @@ function TheFamilyGroup:enabled()
 	return true
 end
 function TheFamilyGroup:disabled_change(new_value) end
+
+function TheFamilyGroup:process_loc_text()
+	if self.key then
+		local resolved = TheFamily.utils.resolve_loc_txt(self.loc_txt)
+		TheFamily.utils.merge_localization(G.localization.descriptions["TheFamily_Group"], self.key, {
+			name = resolved.name,
+			text = resolved.text or resolved.description,
+		})
+	end
+end

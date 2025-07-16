@@ -851,3 +851,13 @@ function TheFamilyTab:close(without_callbacks)
 end
 
 function TheFamilyTab:disabled_change(new_value, caused_by_group) end
+
+function TheFamilyTab:process_loc_text()
+	if self.key then
+		local resolved = TheFamily.utils.resolve_loc_txt(self.loc_txt)
+		TheFamily.utils.merge_localization(G.localization.descriptions["TheFamily_Tab"], self.key, {
+			name = resolved.name,
+			text = resolved.text or resolved.description,
+		})
+	end
+end
