@@ -19,14 +19,14 @@ TheFamily.create_tab({
 	loc_txt = {
 		["en-us"] = {
 			name = "Joker slots",
-			descriptions = {
+			text = {
 				"Displays amount of joker",
 				"slots available",
 			},
 		},
 		["ru"] = {
 			name = "Cлоты под джокеров",
-			description = {
+			text = {
 				"Показывает количество свободных",
 				"слотов под джокеров",
 			},

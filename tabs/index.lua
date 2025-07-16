@@ -9,7 +9,7 @@ TheFamily.create_tab_group({
 
 	loc_txt = {
 		name = "General tabs",
-		description = {
+		text = {
 			"Collection of some miscellaneous",
 			"tabs added by default",
 		},

@@ -245,7 +245,8 @@ TheFamily.own_tabs.time_tracker = {
 		type = "switch",
 
 		loc_txt = {
-			description = {
+			name = "Time",
+			text = {
 				"Real time display and info about",
 				"current session/hand time duration",
 			},

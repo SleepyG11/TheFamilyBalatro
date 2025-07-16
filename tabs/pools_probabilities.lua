@@ -7,7 +7,7 @@ TheFamily.create_tab_group({
 	original_mod_id = "TheFamily", -- will be used SMODS mod id if not defined
 	loc_txt = {
 		name = "Shop probabilities",
-		description = {
+		text = {
 			"Collection of tabs which provides you details about",
 			"{C:green,E:1,S:1.1}probabilities{} to find any kind of stuff in {C:attention}Shop{}:",
 			"{C:mult}Rarities{}, {C:dark_edition}Editions{}, {C:blue}Seals{}, etc.",
@@ -1712,10 +1712,13 @@ TheFamily.own_tabs.pools_probabilities = {
 			type = "switch",
 
 			original_mod_id = "TheFamily",
+			loc_txt = {
+				name = "Card types",
+			},
 
 			front_label = function()
 				return {
-					text = "Card types",
+					name = "Card types",
 				}
 			end,
 			popup = function(definition, card)
@@ -1744,6 +1747,9 @@ TheFamily.own_tabs.pools_probabilities = {
 			type = "switch",
 
 			original_mod_id = "TheFamily",
+			loc_txt = {
+				name = "Rarities",
+			},
 
 			front_label = function()
 				return {
@@ -1776,6 +1782,9 @@ TheFamily.own_tabs.pools_probabilities = {
 			type = "switch",
 
 			original_mod_id = "TheFamily",
+			loc_txt = {
+				name = "Enhancements",
+			},
 
 			front_label = function()
 				return {
@@ -1814,6 +1823,9 @@ TheFamily.own_tabs.pools_probabilities = {
 			type = "switch",
 
 			original_mod_id = "TheFamily",
+			loc_txt = {
+				name = "Seals",
+			},
 
 			front_label = function()
 				return {
@@ -1852,6 +1864,9 @@ TheFamily.own_tabs.pools_probabilities = {
 			type = "switch",
 
 			original_mod_id = "TheFamily",
+			loc_txt = {
+				name = "Editions",
+			},
 
 			front_label = function()
 				return {
@@ -1890,10 +1905,13 @@ TheFamily.own_tabs.pools_probabilities = {
 			type = "switch",
 
 			original_mod_id = "TheFamily",
+			loc_txt = {
+				name = "Booster packs",
+			},
 
 			front_label = function()
 				return {
-					text = "Booster types",
+					text = "Booster packs",
 				}
 			end,
 			popup = function(definition, card)
@@ -1922,6 +1940,9 @@ TheFamily.own_tabs.pools_probabilities = {
 			type = "switch",
 
 			original_mod_id = "TheFamily",
+			loc_txt = {
+				name = "Vouchers",
+			},
 
 			front_label = function()
 				return {

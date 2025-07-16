@@ -261,45 +261,47 @@ function TheFamilyTab:prepare_config_card(card)
 	function card:hover()
 		local tab = self.thefamily_tab
 		if not self.children.popup then
-			local current_mod = tab.original_mod_id and SMODS and SMODS.Mods[tab.original_mod_id]
-			local localization = TheFamily.utils.resolve_loc_txt(tab.loc_txt)
-			local title = localization.name or nil
-			if not title then
-				local front_label = tab:front_label(self)
-				if front_label.text then
-					title = front_label.text
-				end
-			end
-			if not title then
-				title = (current_mod and string.format("%s's tab", current_mod.name))
-			end
+			local current_mod = tab.original_mod_id and SMODS and SMODS.Mods and SMODS.Mods[tab.original_mod_id]
+			local localization = G.localization.descriptions["TheFamily_Tab"][tab.key] or {}
 
 			local is_enabled = tab:enabled()
 			local is_disabled_by_user = tab:_disabled_by_user()
 			local can_be_disabled = tab.can_be_disabled or (tab.group and tab.group.can_be_disabled)
 
+			local name = {}
+			local desc = {}
+			if localization.name_parsed then
+				name = localize({
+					type = "name",
+					set = "TheFamily_Tab",
+					key = tab.key,
+					vars = {},
+					nodes = name,
+					default_col = G.C.WHITE,
+				})
+			end
+			if localization.text_parsed then
+				localize({
+					type = "descriptions",
+					set = "TheFamily_Tab",
+					key = tab.key,
+					vars = {},
+					nodes = desc,
+				})
+				local desc_lines = {}
+				for _, line in ipairs(desc) do
+					table.insert(desc_lines, {
+						n = G.UIT.R,
+						config = { align = "cm" },
+						nodes = line,
+					})
+				end
+				desc = desc_lines
+			end
+
 			local result_content = {
-				title and name_from_rows({
-					{
-						n = G.UIT.T,
-						config = {
-							text = title,
-							scale = 0.4,
-							colour = G.C.UI.TEXT_LIGHT,
-						},
-					},
-				}) or nil,
-				localization.description and desc_from_rows({
-					{
-						{
-							n = G.UIT.R,
-							config = { align = "cm" },
-							nodes = TheFamily.UI.localize_text(localization.description, {
-								align = "cm",
-							}),
-						},
-					},
-				}) or nil,
+				#name > 0 and name_from_rows(name) or nil,
+				#desc > 0 and desc_from_rows({ desc }) or nil,
 				desc_from_rows({
 					{
 						{
@@ -854,10 +856,13 @@ function TheFamilyTab:disabled_change(new_value, caused_by_group) end
 
 function TheFamilyTab:process_loc_text()
 	if self.key then
+		local current_mod = self.original_mod_id and SMODS and SMODS.Mods and SMODS.Mods[self.original_mod_id]
 		local resolved = TheFamily.utils.resolve_loc_txt(self.loc_txt)
-		TheFamily.utils.merge_localization(G.localization.descriptions["TheFamily_Tab"], self.key, {
-			name = resolved.name,
-			text = resolved.text or resolved.description,
+		local entry = TheFamily.utils.merge_localization(G.localization.descriptions["TheFamily_Tab"], self.key, {}, {
+			name = current_mod and string.format("%s's tab", current_mod.name),
+			text = {},
 		})
+		entry.text = resolved.text or entry.text
+		entry.name = resolved.name or entry.name
 	end
 end

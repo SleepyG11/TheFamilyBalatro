@@ -92,35 +92,46 @@ function TheFamilyGroup:prepare_config_card(card)
 	function card:hover()
 		local group = self.thefamily_group
 		if not self.children.popup then
-			local current_mod = group.original_mod_id and SMODS and SMODS.Mods[group.original_mod_id]
-			local localization = TheFamily.utils.resolve_loc_txt(group.loc_txt)
-			local title = localization.name or (current_mod and string.format("%s's group", current_mod.name)) or nil
+			local current_mod = group.original_mod_id and SMODS and SMODS.Mods and SMODS.Mods[group.original_mod_id]
+			local localization = G.localization.descriptions["TheFamily_Group"][group.key] or {}
 
 			local is_enabled = group:enabled()
 			local is_disabled_by_user = group:_disabled_by_user()
 
+			local name = {}
+			local desc = {}
+			if localization.name_parsed then
+				name = localize({
+					type = "name",
+					set = "TheFamily_Group",
+					key = group.key,
+					vars = {},
+					nodes = name,
+					default_col = G.C.WHITE,
+				})
+			end
+			if localization.text_parsed then
+				localize({
+					type = "descriptions",
+					set = "TheFamily_Group",
+					key = group.key,
+					vars = {},
+					nodes = desc,
+				})
+				local desc_lines = {}
+				for _, line in ipairs(desc) do
+					table.insert(desc_lines, {
+						n = G.UIT.R,
+						config = { align = "cm" },
+						nodes = line,
+					})
+				end
+				desc = desc_lines
+			end
+
 			local result_content = {
-				title and name_from_rows({
-					{
-						n = G.UIT.T,
-						config = {
-							text = title,
-							scale = 0.4,
-							colour = G.C.UI.TEXT_LIGHT,
-						},
-					},
-				}) or nil,
-				localization.description and desc_from_rows({
-					{
-						{
-							n = G.UIT.R,
-							config = { align = "cm" },
-							nodes = TheFamily.UI.localize_text(localization.description, {
-								align = "cm",
-							}),
-						},
-					},
-				}) or nil,
+				#name > 0 and name_from_rows(name) or nil,
+				#desc > 0 and desc_from_rows({ desc }) or nil,
 				desc_from_rows({
 					{
 						{
@@ -326,10 +337,13 @@ function TheFamilyGroup:disabled_change(new_value) end
 
 function TheFamilyGroup:process_loc_text()
 	if self.key then
+		local current_mod = self.original_mod_id and SMODS and SMODS.Mods and SMODS.Mods[self.original_mod_id]
 		local resolved = TheFamily.utils.resolve_loc_txt(self.loc_txt)
-		TheFamily.utils.merge_localization(G.localization.descriptions["TheFamily_Group"], self.key, {
-			name = resolved.name,
-			text = resolved.text or resolved.description,
+		local entry = TheFamily.utils.merge_localization(G.localization.descriptions["TheFamily_Group"], self.key, {}, {
+			name = current_mod and string.format("%s's group", current_mod.name),
+			text = {},
 		})
+		entry.text = resolved.text or entry.text
+		entry.name = resolved.name or entry.name
 	end
 end

@@ -18,7 +18,7 @@ local group = TheFamily.create_tab_group({
 	-- Optional tho
 	loc_txt = {
 		name = "Example group",
-		description = {
+		text = {
 			"Collection of {C:attention}example{} tabs",
 		},
 	},
@@ -89,7 +89,7 @@ local tab = TheFamily.create_tab({
 	-- Some info what this tab does
 	loc_txt = {
 		name = "Go to main menu",
-		description = {
+		text = {
 			"Shortcut for {C:attention}Maun menu{} button",
 		},
 	},
