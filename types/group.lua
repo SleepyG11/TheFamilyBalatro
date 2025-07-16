@@ -16,7 +16,7 @@
 --- @field loc_txt? table SMODS-like localization definition. See https://github.com/Steamodded/smods/wiki/Localization#loc_txt
 --- @field original_mod_id? string Mod id this group belongs to. Use only when your mod is not require SMODS. Default is `SMODS.current_mod.id`
 --- @field can_be_disabled? boolean Determines can this group be disabled in mod config. If `true`, all tabs inside this group can be disabled aswell. Default is `false`
---- @field disabled_change? fun(self: TheFamilyTab, new_value: boolean) Callback when group is enabled/disabled by player in mod config. Ignores value returned by `TheFamilyGroup:enabled` method
+--- @field disabled_change? fun(self: TheFamilyTab, new_value: boolean) Callback when group is enabled/disabled by player in mod config. Ignores `TheFamilyGroup:enabled()`
 
 --- @class TheFamilyGroup: TheFamilyGroupOptions
 --- @field load_index number
