@@ -161,6 +161,22 @@ TheFamily.UI = {
 		end
 		return final_line
 	end,
+	localize_loc_text = function(parsed, args)
+		args = args or {}
+		args.default_col = args.default_col or G.C.UI.TEXT_DARK
+		args.vars = args.vars or {}
+
+		local collected_lines = {}
+		for _, line in ipairs(parsed) do
+			local localized = TheFamily.UI.localize_box(line, args)
+			table.insert(collected_lines, {
+				n = G.UIT.R,
+				config = { align = args.align },
+				nodes = localized,
+			})
+		end
+		return collected_lines
+	end,
 
 	page = 1,
 	items_per_page = 20,

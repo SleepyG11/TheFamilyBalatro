@@ -1,5 +1,5 @@
 TheFamily = setmetatable({
-	version = "0.1.1g",
+	version = "0.1.2",
 }, {})
 
 TheFamily.SWITCH_OVERLAYS = {
@@ -45,53 +45,51 @@ TheFamily.enabled_tabs = {
 	--- @type TheFamilyGroup[]
 	list = {},
 }
-function TheFamily.toggle_and_sort_tabs()
-	for _, tab in ipairs(TheFamily.tabs.list) do
-		if not tab:enabled() then
-			tab.is_enabled = false
-		else
-			tab.is_enabled = true
-		end
+
+function TheFamily.toggle_and_sort_tabs_and_groups()
+	EMPTY(TheFamily.enabled_tabs.list)
+	EMPTY(TheFamily.enabled_tabs.dictionary)
+
+	local get_tab_order = function(tab)
+		return tab
+				and tab.group
+				and TheFamily.cc.tabs_order[tab.group.key]
+				and TheFamily.cc.tabs_order[tab.group.key][tab.key]
+			or 0
 	end
+	local get_group_order = function(group)
+		return group and TheFamily.cc.groups_order[group.key] or 0
+	end
+
 	table.sort(TheFamily.tabs.list, function(a, b)
-		return not a.order or not b.order or a.order < b.order
+		return TheFamily.utils.first_non_zero(
+			get_tab_order(a) - get_tab_order(b),
+			a.order - b.order,
+			a.load_index - b.load_index
+		) < 0
 	end)
-end
-function TheFamily.toggle_and_sort_tab_groups()
 	table.sort(TheFamily.tab_groups.list, function(a, b)
-		return not a.order or not b.order or a.order < b.order
+		return TheFamily.utils.first_non_zero(
+			get_group_order(a) - get_group_order(b),
+			a.order - b.order,
+			a.load_index - b.load_index
+		) < 0
 	end)
 	for _, group in ipairs(TheFamily.tab_groups.list) do
-		if not group:enabled() then
-			group.is_enabled = false
-		else
-			group.is_enabled = true
-		end
 		table.sort(group.tabs.list, function(a, b)
-			return not a.order or not b.order or a.order < b.order
+			return TheFamily.utils.first_non_zero(
+				get_tab_order(a) - get_tab_order(b),
+				a.order - b.order,
+				a.load_index - b.load_index
+			) < 0
 		end)
 		EMPTY(group.enabled_tabs.list)
 		EMPTY(group.enabled_tabs.dictionary)
-		if group.is_enabled then
+		if group:_enabled() then
 			for _, tab in ipairs(group.tabs.list) do
-				if tab.is_enabled then
+				if tab:_enabled() then
 					table.insert(group.enabled_tabs.list, tab)
 					group.enabled_tabs.dictionary[tab.key] = tab
-				end
-			end
-		end
-		table.sort(group.enabled_tabs.list, function(a, b)
-			return not a.order or not b.order or a.order < b.order
-		end)
-	end
-end
-function TheFamily.toggle_and_sort_enabled_tabs()
-	EMPTY(TheFamily.enabled_tabs.list)
-	EMPTY(TheFamily.enabled_tabs.dictionary)
-	for _, group in ipairs(TheFamily.tab_groups.list) do
-		if group.is_enabled then
-			for _, tab in ipairs(group.tabs.list) do
-				if tab.is_enabled then
 					table.insert(TheFamily.enabled_tabs.list, tab)
 					TheFamily.enabled_tabs.dictionary[tab.key] = tab
 				end
@@ -99,14 +97,33 @@ function TheFamily.toggle_and_sort_enabled_tabs()
 		end
 	end
 end
+function TheFamily.save_groups_order(area)
+	local result = {}
+	for _, card in ipairs(area.cards) do
+		local group = card.thefamily_group
+		result[group.key] = card.rank
+	end
+	TheFamily.config.current.groups_order = result
+	TheFamily.config.save()
 
---- @param config TheFamilyGroupOptions
---- @return TheFamilyGroup
+	TheFamily.rerender_area()
+end
+function TheFamily.save_tabs_order(area)
+	local group = area.cards[1].thefamily_tab.group
+	local result = {}
+	for _, card in ipairs(area.cards) do
+		local tab = card.thefamily_tab
+		result[tab.key] = card.rank
+	end
+	TheFamily.config.current.tabs_order[group.key] = result
+	TheFamily.config.save()
+
+	TheFamily.rerender_area()
+end
+
 function TheFamily.create_tab_group(config)
 	return TheFamilyGroup(config)
 end
---- @param config TheFamilyTabOptions
---- @return TheFamilyTab
 function TheFamily.create_tab(config)
 	return TheFamilyTab(config)
 end
@@ -124,9 +141,7 @@ function TheFamily.emplace_steamodded()
 end
 
 function TheFamily.init()
-	TheFamily.toggle_and_sort_tabs()
-	TheFamily.toggle_and_sort_tab_groups()
-	TheFamily.toggle_and_sort_enabled_tabs()
+	TheFamily.toggle_and_sort_tabs_and_groups()
 
 	local ui_values = TheFamily.UI.get_ui_values()
 	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / ui_values.tabs_per_page)
@@ -141,9 +156,7 @@ function TheFamily.rerender_area()
 	if not TheFamily.UI.area or G.SETTINGS.paused then
 		return
 	end
-	TheFamily.toggle_and_sort_tabs()
-	TheFamily.toggle_and_sort_tab_groups()
-	TheFamily.toggle_and_sort_enabled_tabs()
+	TheFamily.toggle_and_sort_tabs_and_groups()
 
 	local ui_values = TheFamily.UI.get_ui_values()
 	if ui_values.position_on_screen == "bottom" or ui_values.position_on_screen == "top" then
@@ -154,11 +167,22 @@ function TheFamily.rerender_area()
 	ui_values = TheFamily.UI.get_ui_values()
 
 	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / ui_values.tabs_per_page)
-	TheFamily.UI.page = math.min(TheFamily.UI.max_page, TheFamily.UI.page)
+	TheFamily.UI.page = math.max(1, math.min(TheFamily.UI.max_page, TheFamily.UI.page))
 
 	local rerender_data = TheFamily.UI.area:_save_rerender_data()
 	TheFamily.UI.area:safe_remove()
 	TheFamilyCardArea():init_cards(rerender_data)
+end
+function TheFamily.process_loc_text()
+	G.localization.descriptions["TheFamily_Group"] = G.localization.descriptions["TheFamily_Group"] or {}
+	G.localization.descriptions["TheFamily_Tab"] = G.localization.descriptions["TheFamily_Tab"] or {}
+
+	for _, group in ipairs(TheFamily.tab_groups.list) do
+		group:process_loc_text()
+	end
+	for _, tab in ipairs(TheFamily.tabs.list) do
+		tab:process_loc_text()
+	end
 end
 
 ------------------------------
@@ -175,6 +199,31 @@ local start_run_ref = Game.start_run
 function Game:start_run(...)
 	start_run_ref(self, ...)
 	TheFamily.init()
+end
+
+local init_localization_ref = init_localization
+function init_localization(...)
+	if not G.localization.__thefamily_injected then
+		TheFamily.process_loc_text()
+		-- local en_loc = require("handy/localization/en-us")
+		-- TheFamily.utils.table_merge(G.localization, en_loc)
+		-- TheFamily.UI.cache_config_dictionary_search()
+		-- if G.SETTINGS.language ~= "en-us" then
+		-- local success, current_loc = pcall(function()
+		-- 	return require("handy/localization/" .. G.SETTINGS.language)
+		-- end)
+		-- local missing_keys = TheFamily.utils.deep_missing_keys(en_loc, current_loc)
+		-- for _, missing_key in ipairs(missing_keys) do
+		-- 	print("Missing key: " .. missing_key)
+		-- end
+		-- if success and current_loc then
+		-- 	TheFamily.utils.table_merge(G.localization, current_loc)
+		-- 	TheFamily.UI.cache_config_dictionary_search(true)
+		-- end
+		-- end
+		G.localization.__thefamily_injected = true
+	end
+	return init_localization_ref(...)
 end
 
 ------------------------------

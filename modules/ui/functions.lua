@@ -24,17 +24,61 @@ function G.FUNCS.exit_overlay_menu(...)
 end
 
 function G.FUNCS.thefamily_change_pagination_type(arg)
-	TheFamily.cc.pagination_type = arg.to_key
+	TheFamily.config.current.pagination_type = arg.to_key
 	TheFamily.config.save()
 	TheFamily.rerender_area()
 end
 function G.FUNCS.thefamily_change_screen_position(arg)
-	TheFamily.cc.position_on_screen = arg.to_key
+	TheFamily.config.current.position_on_screen = arg.to_key
 	TheFamily.config.save()
 	TheFamily.rerender_area()
 end
 function G.FUNCS.thefamily_change_scaling(arg)
-	TheFamily.cc.scaling = arg.to_key
+	TheFamily.config.current.scaling = arg.to_key
+	TheFamily.config.save()
+	TheFamily.rerender_area()
+end
+function G.FUNCS.thefamily_can_user_toggle_group(e)
+	local card = e.config.ref_table
+	local group = card.thefamily_group
+	if group.can_be_disabled then
+		e.config.button = "thefamily_user_toggle_group"
+		if group:_disabled_by_user() then
+			e.config.colour = G.C.GREEN
+		else
+			e.config.colour = G.C.MULT
+		end
+	else
+		e.config.button = nil
+		e.config.colour = G.C.UI.BACKGROUND_INACTIVE
+	end
+end
+function G.FUNCS.thefamily_user_toggle_group(e)
+	local card = e.config.ref_table
+	card.thefamily_group:_toggle_by_user()
+	card.debuff = card.thefamily_group:_disabled_by_user()
+	TheFamily.config.save()
+	TheFamily.rerender_area()
+end
+function G.FUNCS.thefamily_can_user_toggle_tab(e)
+	local card = e.config.ref_table
+	local tab = card.thefamily_tab
+	if tab.can_be_disabled or tab.group.can_be_disabled then
+		e.config.button = "thefamily_user_toggle_tab"
+		if tab:_disabled_by_user() then
+			e.config.colour = G.C.GREEN
+		else
+			e.config.colour = G.C.MULT
+		end
+	else
+		e.config.button = nil
+		e.config.colour = G.C.UI.BACKGROUND_INACTIVE
+	end
+end
+function G.FUNCS.thefamily_user_toggle_tab(e)
+	local card = e.config.ref_table
+	card.thefamily_tab:_toggle_by_user()
+	card.debuff = card.thefamily_tab:_disabled_by_user()
 	TheFamily.config.save()
 	TheFamily.rerender_area()
 end

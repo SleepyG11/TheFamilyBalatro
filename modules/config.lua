@@ -7,6 +7,12 @@ local default_config = {
 		format = 1,
 		show_time_alert = true,
 	},
+
+	disabled_groups = {},
+	groups_order = {},
+
+	disabled_tabs = {},
+	tabs_order = {},
 }
 
 TheFamily.config = {
@@ -33,8 +39,10 @@ TheFamily.config = {
 		TheFamily.config.current = TheFamily.utils.table_merge({}, TheFamily.config.default)
 		local lovely_mod_config = get_compressed("config/TheFamily.jkr")
 		if lovely_mod_config then
-			TheFamily.config.current =
-				TheFamily.utils.table_merge(TheFamily.config.current, STR_UNPACK(lovely_mod_config))
+			local unpacked = STR_UNPACK(lovely_mod_config)
+			TheFamily.config.current = TheFamily.utils.table_merge(TheFamily.config.current, unpacked)
+			TheFamily.config.current.groups_order = unpacked.groups_order or {}
+			TheFamily.config.current.tabs_order = unpacked.tabs_order or {}
 		end
 		TheFamily.cc = TheFamily.config.current
 	end,

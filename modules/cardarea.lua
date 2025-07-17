@@ -109,16 +109,11 @@ function TheFamilyCardArea:set_card_position(card, index, force_position)
 	local is_any_card_hovered = self.thefamily_is_any_card_hovered
 
 	local highlight_dx = 0
-	if index == 1 then
-		-- Always visible
-		highlight_dx = card.highlighted and -0.2 or 0
+	if card.highlighted then
+		-- Visible only if highlighted, but only on a half I guess
+		highlight_dx = is_first_card_selected and -0.3 or is_any_card_hovered and -0.2 or 0
 	else
-		if card.highlighted then
-			-- Visible only if highlighted, but only on a half I guess
-			highlight_dx = is_first_card_selected and -0.3 or is_any_card_hovered and -0.2 or 0
-		else
-			highlight_dx = is_first_card_selected and -0.2 or is_any_card_hovered and 0 or 0.2
-		end
+		highlight_dx = is_first_card_selected and -0.2 or is_any_card_hovered and 0 or 0.2
 	end
 	if card.states.hover.is then
 		highlight_dx = highlight_dx - 0.075
@@ -301,7 +296,7 @@ function TheFamilyCardArea:draw()
 end
 function TheFamilyCardArea:update(dt)
 	for _, tab in ipairs(TheFamily.tabs.list) do
-		if tab.is_enabled and tab.key then
+		if tab:_enabled() and tab.key then
 			local is_opened = self:_is_tab_opened(tab)
 			if is_opened and not tab:_can_highlight() then
 				self:_close_and_unhighlight(tab)
@@ -485,6 +480,8 @@ function TheFamilyCardArea:_init_core_tabs()
 			type = "switch",
 			key = "thefamily_core",
 
+			original_mod_id = "TheFamily",
+
 			alert = function(self, card)
 				if not card.highlighted then
 					return nil
@@ -513,6 +510,9 @@ function TheFamilyCardArea:_init_core_tabs()
 		prev_page = TheFamilyTab({
 			key = "thefamily_next_page",
 			center = "c_base",
+
+			original_mod_id = "TheFamily",
+
 			front_label = function(definition, card)
 				return {
 					text = "Next page",
@@ -526,6 +526,9 @@ function TheFamilyCardArea:_init_core_tabs()
 		next_page = TheFamilyTab({
 			key = "thefamily_prev_page",
 			center = "c_base",
+
+			original_mod_id = "TheFamily",
+
 			front_label = function(definition, card)
 				return {
 					text = "Prev page",
@@ -596,7 +599,7 @@ function TheFamilyCardArea:create_page_cards()
 			if current_index >= end_index then
 				break
 			end
-			if group.is_enabled then
+			if group:_enabled() then
 				if #group.enabled_tabs.list + current_index < start_index then
 					current_index = current_index + #group.enabled_tabs.list
 				else
@@ -618,16 +621,16 @@ function TheFamilyCardArea:create_page_cards()
 		for i = 1, ui_values.tabs_per_page do
 			if tabs_to_render[i] then
 				self.rendered_tabs.dictionary[tabs_to_render[i].key] = tabs_to_render[i]
-				tabs_to_render[i]:create_card(i + 2)
+				tabs_to_render[i]:create_tab_card(self, i + 2)
 			else
 				TheFamilyTab({
 					type = "filler",
-				}):create_card(i + 2)
+				}):create_tab_card(self, i + 2)
 			end
 		end
 	elseif ui_values.pagination_type == "scroll" then
 		for _, group in ipairs(TheFamily.tab_groups.list) do
-			if group.is_enabled then
+			if group:_enabled() then
 				for _, tab in ipairs(group.enabled_tabs.list) do
 					table.insert(tabs_to_render, tab)
 				end
@@ -638,7 +641,7 @@ function TheFamilyCardArea:create_page_cards()
 
 		for i = 1, #tabs_to_render do
 			self.rendered_tabs.dictionary[tabs_to_render[i].key] = tabs_to_render[i]
-			tabs_to_render[i]:create_card(i + 2)
+			tabs_to_render[i]:create_tab_card(self, i + 2)
 		end
 	end
 	self:calculate_parrallax()
@@ -647,33 +650,33 @@ function TheFamilyCardArea:create_page_cards()
 end
 function TheFamilyCardArea:create_initial_cards()
 	self:_init_core_tabs()
-	TheFamilyCardArea.core_tabs.mod_toggle:create_card(nil, true)
+	TheFamilyCardArea.core_tabs.mod_toggle:create_tab_card(self, nil, true)
 	TheFamilyTab({
 		type = "separator",
-	}):create_card(nil, true)
+	}):create_tab_card(self, nil, true)
 	local ui_values = TheFamily.UI.get_ui_values()
 	if ui_values.pagination_type == "page" then
 		for i = 1, ui_values.tabs_per_page do
 			TheFamilyTab({
 				type = "filler",
-			}):create_card(nil, true)
+			}):create_tab_card(self, nil, true)
 		end
 		TheFamilyTab({
 			type = "separator",
-		}):create_card(nil, true)
-		TheFamilyCardArea.core_tabs.prev_page:create_card(nil, true)
-		TheFamilyCardArea.core_tabs.next_page:create_card(nil, true)
+		}):create_tab_card(self, nil, true)
+		TheFamilyCardArea.core_tabs.prev_page:create_tab_card(self, nil, true)
+		TheFamilyCardArea.core_tabs.next_page:create_tab_card(self, nil, true)
 	elseif ui_values.pagination_type == "scroll" then
 		local items_to_render = 0
 		for _, group in ipairs(TheFamily.tab_groups.list) do
-			if group.is_enabled then
+			if group:_enabled() then
 				items_to_render = items_to_render + #group.enabled_tabs.list
 			end
 		end
 		for i = 1, items_to_render do
 			TheFamilyTab({
 				type = "filler",
-			}):create_card(nil, true)
+			}):create_tab_card(self, nil, true)
 		end
 	end
 	self:calculate_parrallax()

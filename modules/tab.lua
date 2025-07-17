@@ -1,5 +1,7 @@
 TheFamilyTab = Object:extend()
 
+local load_index = 1
+
 --- @param params TheFamilyTabOptions
 function TheFamilyTab:init(params)
 	if params.key and TheFamily.tabs.dictionary[params.key] then
@@ -12,6 +14,11 @@ function TheFamilyTab:init(params)
 
 	self.key = params.key
 	self.order = params.order or #TheFamily.tabs.list
+	self.load_index = load_index
+	load_index = load_index + 1
+
+	self.original_mod_id = params.original_mod_id or (SMODS and SMODS.current_mod and SMODS.current_mod.id) or nil
+	self.loc_txt = params.loc_txt or {}
 
 	self.group_key = params.group_key or nil
 	self.group = nil
@@ -36,7 +43,8 @@ function TheFamilyTab:init(params)
 	self.click = only_function(params.click, self.click)
 
 	self.enabled = only_function(params.enabled, self.enabled)
-	self.is_enabled = false
+	self.can_be_disabled = params.can_be_disabled or false
+	self.disabled_change = only_function(params.disabled_change, self.disabled_change)
 
 	self.card = nil
 
@@ -56,6 +64,24 @@ function TheFamilyTab:init(params)
 	end
 end
 
+function TheFamilyTab:_enabled()
+	return not self:_disabled() and self:enabled()
+end
+function TheFamilyTab:_disabled()
+	return (self.group and self.group:_disabled_by_user()) or self:_disabled_by_user()
+end
+function TheFamilyTab:_disabled_by_user()
+	return (self.can_be_disabled or (self.group and self.group.can_be_disabled))
+		and TheFamily.cc.disabled_tabs[self.key]
+end
+function TheFamilyTab:_toggle_by_user()
+	local old_disabled = self:_disabled()
+	TheFamily.cc.disabled_tabs[self.key] = not TheFamily.cc.disabled_tabs[self.key]
+	local new_disabled = self:_disabled()
+	if not not new_disabled ~= not not old_disabled then
+		self:disabled_change(new_disabled, false)
+	end
+end
 function TheFamilyTab:enabled()
 	return true
 end
@@ -75,12 +101,7 @@ function TheFamilyTab:front_label(card) end
 function TheFamilyTab:popup(card) end
 function TheFamilyTab:alert(card) end
 
-function TheFamilyTab:create_card(replace_index, emplace)
-	if not TheFamily.UI.area then
-		return
-	end
-	local this = self
-	local area = TheFamily.UI.area
+function TheFamilyTab:create_card(area)
 	local card
 
 	TheFamily.__prevent_used_jokers = true
@@ -90,67 +111,68 @@ function TheFamilyTab:create_card(replace_index, emplace)
 			bypass_discovery_ui = true,
 			discover = false,
 		})
-		card.no_shadow = true
-		if self.type == "separator" then
-			card.states.visible = false
-			card.states.hover.can = false
-		end
-		card.states.drag.can = false
-		function card:click() end
 	elseif self.center then
-		if type(self.center) == "string" then
-			card = Card(
-				area.T.x + area.T.w / 2,
-				area.T.y,
-				G.CARD_W,
-				G.CARD_H,
-				self.front and G.P_CARDS[self.front] or nil,
-				G.P_CENTERS[self.center] or G.P_CENTERS.c_base,
-				{
-					bypass_discovery_center = true,
-					bypass_discovery_ui = true,
-					discover = false,
-				}
-			)
-		elseif type(self.center) == "function" then
+		if type(self.center) == "function" then
 			card = self:center(area)
 				or Card(area.T.x + area.T.w / 2, area.T.y, G.CARD_W, G.CARD_H, nil, G.P_CENTERS.c_base, {
 					bypass_discovery_center = true,
 					bypass_discovery_ui = true,
 					discover = false,
 				})
-		end
-		card.no_shadow = true
-		card.states.visible = true
-		card.states.hover.can = true
-		card.states.drag.can = false
-		function card:click()
-			if self.highlighted ~= true then
-				area:add_to_highlighted(self)
-			else
-				area:remove_from_highlighted(self)
-			end
+		else
+			card = Card(
+				area.T.x + area.T.w / 2,
+				area.T.y,
+				G.CARD_W,
+				G.CARD_H,
+				self.front and G.P_CARDS[self.front] or nil,
+				G.P_CENTERS[self.center or ""] or G.P_CENTERS.c_base,
+				{
+					bypass_discovery_center = true,
+					bypass_discovery_ui = true,
+					discover = false,
+				}
+			)
 		end
 	end
 	TheFamily.__prevent_used_jokers = nil
 
-	self.card = card
-	card.thefamily_tab = self
-
-	if area then
-		if emplace then
-			area:emplace(card)
-		elseif replace_index then
-			area:replace(card, replace_index)
-		end
+	if card then
+		card.thefamily_tab = self
 	end
-
-	self:set_card(card)
 
 	return card
 end
-function TheFamilyTab:set_card(card)
-	local this = self
+
+function TheFamilyTab:prepare_tab_card(card)
+	if not card then
+		return
+	end
+	self.card = card
+
+	card.no_shadow = true
+
+	if self.type == "separator" or self.type == "filler" then
+		card.states.drag.can = false
+		if self.type == "separator" then
+			card.states.visible = false
+			card.states.hover.can = false
+		end
+		function card:click() end
+	else
+		card.states.visible = true
+		card.states.hover.can = true
+		card.states.drag.can = false
+		function card:click()
+			if self.area then
+				if not self.highlighted then
+					self.area:add_to_highlighted(self)
+				else
+					self.area:remove_from_highlighted(self)
+				end
+			end
+		end
+	end
 
 	function card:remove()
 		self.removed = true
@@ -166,7 +188,7 @@ function TheFamilyTab:set_card(card)
 		end
 		Moveable.remove(self)
 
-		this:remove_card()
+		self.thefamily_tab:remove_tab_card()
 	end
 
 	local ui_values = TheFamily.UI.get_ui_values()
@@ -184,7 +206,7 @@ function TheFamilyTab:set_card(card)
 
 	local old_click = card.click
 	function card:click()
-		if this:click(self) then
+		if self.thefamily_tab:click(self) then
 			return
 		end
 		old_click(self)
@@ -198,19 +220,241 @@ function TheFamilyTab:set_card(card)
 		self.old_highlighted = self.highlighted
 
 		if is_highlight_changed then
-			this:rerender_popup()
+			self.thefamily_tab:rerender_popup()
 		else
-			this:render_popup()
+			self.thefamily_tab:render_popup()
 		end
-		this:render_alert()
-		this:render_front_label()
+		self.thefamily_tab:render_alert()
+		self.thefamily_tab:render_front_label()
+	end
+
+	return card
+end
+function TheFamilyTab:emplace_tab_card(card, area, replace_index, emplace)
+	if area and card then
+		if emplace then
+			area:emplace(card)
+		elseif replace_index then
+			area:replace(card, replace_index)
+		end
 	end
 end
-function TheFamilyTab:remove_card()
+function TheFamilyTab:create_tab_card(area, replace_index, emplace)
+	if area then
+		self:emplace_tab_card(self:prepare_tab_card(self:create_card(area)), area, replace_index, emplace)
+	end
+end
+function TheFamilyTab:remove_tab_card()
 	if self.card and not self.card.REMOVED then
 		self.card:remove()
 	end
 	self.card = nil
+end
+
+function TheFamilyTab:prepare_config_card(card)
+	if not card then
+		return
+	end
+	function card:align_h_popup()
+		return {}
+	end
+	function card:hover()
+		local tab = self.thefamily_tab
+		if not self.children.popup then
+			local current_mod = tab.original_mod_id and SMODS and SMODS.Mods and SMODS.Mods[tab.original_mod_id]
+			local localization = G.localization.descriptions["TheFamily_Tab"][tab.key] or {}
+
+			local is_enabled = tab:enabled()
+			local is_disabled_by_user = tab:_disabled_by_user()
+			local can_be_disabled = tab.can_be_disabled or (tab.group and tab.group.can_be_disabled)
+
+			local name = {}
+			local desc = {}
+			if localization.name_parsed then
+				name = localize({
+					type = "name",
+					set = "TheFamily_Tab",
+					key = tab.key,
+					vars = {},
+					nodes = name,
+					default_col = G.C.WHITE,
+				})
+			end
+			if localization.text_parsed then
+				localize({
+					type = "descriptions",
+					set = "TheFamily_Tab",
+					key = tab.key,
+					vars = {},
+					nodes = desc,
+				})
+				local desc_lines = {}
+				for _, line in ipairs(desc) do
+					table.insert(desc_lines, {
+						n = G.UIT.R,
+						config = { align = "cm" },
+						nodes = line,
+					})
+				end
+				desc = desc_lines
+			end
+
+			local result_content = {
+				#name > 0 and name_from_rows(name) or nil,
+				#desc > 0 and desc_from_rows({ desc }) or nil,
+				desc_from_rows({
+					{
+						{
+							n = G.UIT.R,
+							config = { align = "cm" },
+							nodes = TheFamily.UI.localize_text({
+								"{V:1}#1#{} / {V:2}#2#{}",
+							}, {
+								align = "cm",
+								vars = {
+									is_enabled and "Active" or "Inactive",
+									(not can_be_disabled) and "Cannot be disabled"
+										or (not is_disabled_by_user) and "Enabled"
+										or "Disabled",
+									colours = {
+										is_enabled and G.C.GREEN or G.C.MULT,
+										(not can_be_disabled) and G.C.FILTER
+											or (not is_disabled_by_user) and G.C.GREEN
+											or G.C.MULT,
+									},
+								},
+							}),
+						},
+					},
+				}),
+			}
+			if current_mod and current_mod.display_name and current_mod.badge_colour then
+				table.insert(result_content, TheFamily.UI.PARTS.create_mod_badge(current_mod))
+			end
+
+			local popup = {
+				n = G.UIT.ROOT,
+				config = { align = "cm", colour = G.C.CLEAR },
+				nodes = {
+					{
+						n = G.UIT.C,
+						config = {
+							align = "cm",
+						},
+						nodes = {
+							{
+								n = G.UIT.R,
+								config = {
+									padding = 0.05,
+									r = 0.12,
+									colour = lighten(G.C.JOKER_GREY, 0.5),
+									emboss = 0.07,
+								},
+								nodes = {
+									{
+										n = G.UIT.R,
+										config = {
+											align = "cm",
+											padding = 0.07,
+											r = 0.1,
+											colour = adjust_alpha(darken(G.C.BLACK, 0.1), 0.8),
+										},
+										nodes = result_content,
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			local popup_config = {
+				align = "tm",
+				offset = { x = 0, y = -0.25 },
+				parent = self,
+				instance_type = "POPUP",
+				xy_bond = "Strong",
+				r_bond = "Weak",
+				wh_bond = "Weak",
+			}
+
+			local box = UIBox({
+				definition = popup,
+				config = popup_config,
+			})
+
+			self.children.popup = box
+		end
+	end
+	function card:stop_hover()
+		if self.children.popup then
+			self.children.popup:remove()
+			self.children.popup = nil
+		end
+	end
+	function card:update_alert() end
+	function card:highlight(is_highlighted)
+		self.highlighted = is_highlighted
+		if self.highlighted and not self.children.use_button then
+			self.children.use_button = UIBox({
+				definition = {
+					n = G.UIT.ROOT,
+					config = { padding = 0, colour = G.C.CLEAR },
+					nodes = {
+						{
+							n = G.UIT.R,
+							config = {
+								ref_table = self,
+								r = 0.08,
+								padding = 0.1,
+								align = "bm",
+								minw = 0.5 * self.T.w - 0.15,
+								maxw = 0.9 * self.T.w - 0.15,
+								minh = 0.3 * self.T.h,
+								hover = true,
+								shadow = true,
+								colour = G.C.UI.BACKGROUND_INACTIVE,
+								button = "thefamily_user_toggle_tab",
+								func = "thefamily_can_user_toggle_tab",
+							},
+							nodes = {
+								{
+									n = G.UIT.T,
+									config = {
+										text = "Toggle",
+										colour = G.C.UI.TEXT_LIGHT,
+										scale = 0.45,
+										shadow = true,
+									},
+								},
+							},
+						},
+					},
+				},
+				config = {
+					align = "bmi",
+					offset = { x = 0, y = 0.65 },
+					parent = self,
+				},
+			})
+		elseif not self.highlighted and self.children.use_button then
+			self.children.use_button:remove()
+			self.children.use_button = nil
+		end
+	end
+
+	card.debuff = self:_disabled_by_user()
+
+	return card
+end
+function TheFamilyTab:emplace_config_card(card, area)
+	if area and card then
+		area:emplace(card)
+	end
+end
+function TheFamilyTab:create_config_card(area)
+	if area then
+		self:emplace_config_card(self:prepare_config_card(self:create_card(area)), area)
+	end
 end
 
 function TheFamilyTab:remove_front_label()
@@ -605,5 +849,20 @@ end
 function TheFamilyTab:close(without_callbacks)
 	if TheFamily.UI.area then
 		TheFamily.UI.area:_close_and_unhighlight(self, without_callbacks)
+	end
+end
+
+function TheFamilyTab:disabled_change(new_value, caused_by_group) end
+
+function TheFamilyTab:process_loc_text()
+	if self.key then
+		local current_mod = self.original_mod_id and SMODS and SMODS.Mods and SMODS.Mods[self.original_mod_id]
+		local resolved = TheFamily.utils.resolve_loc_txt(self.loc_txt)
+		local entry = TheFamily.utils.merge_localization(G.localization.descriptions["TheFamily_Tab"], self.key, {}, {
+			name = current_mod and string.format("%s's tab", current_mod.name),
+			text = {},
+		})
+		entry.text = resolved.text or entry.text
+		entry.name = resolved.name or entry.name
 	end
 end
