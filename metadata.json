@@ -3,10 +3,12 @@
 	"name": "TheFamily",
 	"display_name": "TheFamily",
 	"author": ["SleepyG11"],
-	"description": "Cleanup screen space",
+	"description": "UI tabs to cleanup screen space and provide more in-game info",
 	"prefix": "thefamily",
 	"main_file": "steamodded.lua",
 	"priority": 0,
 	"version": "0.1.2",
-	"dependencies": []
+	"dependencies": [],
+	"badge_colour": "6d4533",
+	"badge_text_colour": "ff5040"
 }
