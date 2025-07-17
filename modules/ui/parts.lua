@@ -330,7 +330,7 @@ TheFamily.UI.PARTS = {
 									silent = true,
 									spacing = 1 * scale_fac,
 									scale = 0.33 * size * scale_fac,
-									marquee = true,
+									marquee = calced_text_width > max_text_width and not mod.no_marquee,
 									maxw = max_text_width,
 								}),
 							},
