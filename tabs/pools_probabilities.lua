@@ -264,7 +264,11 @@ TheFamily.own_tabs.pools_probabilities = {
 			end
 		end
 		local is_softlocked = function(item)
-			return item.set == "Planet" and item.config.softlock and G.GAME.hands[item.config.hand_type].played == 0
+			return item.set == "Planet"
+				and item.config
+				and item.config.softlock
+				and item.config.hand_type
+				and (not G.GAME.hands[item.config.hand_type] or G.GAME.hands[item.config.hand_type].played == 0)
 		end
 
 		local has_rarity = false
