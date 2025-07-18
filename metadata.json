@@ -10,5 +10,6 @@
 	"version": "0.1.2",
 	"dependencies": [],
 	"badge_colour": "6d4533",
-	"badge_text_colour": "ff5040"
+	"badge_text_colour": "ff5040",
+	"allow_redistribution": true
 }
