@@ -1,4 +1,4 @@
-TheFamily.own_tabs.time_tracker = {
+local TimeTracker = setmetatable({
 	alert_label = "",
 	real_time_label = os.date("%I:%M:%S %p", os.time()),
 
@@ -23,7 +23,7 @@ TheFamily.own_tabs.time_tracker = {
 
 	acceleration_label = "1x",
 
-	format_time = function(time, with_ms, always_h)
+	format_time = function(self, time, with_ms, always_h)
 		local result = os.date("%M:%S", time)
 		if with_ms then
 			local ms = math.floor((time - math.floor(time)) * 1000 + 0.5)
@@ -37,33 +37,30 @@ TheFamily.own_tabs.time_tracker = {
 		return result
 	end,
 
-	load = function()
-		local self = TheFamily.own_tabs.time_tracker
+	load = function(self)
 		self.last_hand = 0
-		self.last_hand_label = self.format_time(self.last_hand, true)
+		self.last_hand_label = self:format_time(self.last_hand, true)
 		self.current_hand_time = 0
 		self.current_hand_start = 0
 		self.current_hand_label = "Not played yet"
 	end,
 
-	update = function(dt)
-		local self = TheFamily.own_tabs.time_tracker
-
+	update = function(self, dt)
 		self.real_time_label = os.date(self.time_formats[TheFamily.cc.time_tracker.format], os.time())
-		self.session_label = self.format_time(G.TIMERS.UPTIME or 0, false, true)
+		self.session_label = self:format_time(G.TIMERS.UPTIME or 0, false, true)
 		self.acceleration_label = string.format("x%.2f", G.SPEEDFACTOR or 0)
-		self.this_run_label = self.format_time((G.TIMERS.UPTIME or 0) - self.this_run_start, true, true)
+		self.this_run_label = self:format_time((G.TIMERS.UPTIME or 0) - self.this_run_start, true, true)
 		if G.STATE == G.STATES.HAND_PLAYED then
 			if self.current_hand_start == 0 then
 				self.current_hand_start = love.timer.getTime()
 			end
 			self.current_hand_time = love.timer.getTime()
-			self.current_hand_label = self.format_time(self.current_hand_time - self.current_hand_start, true)
+			self.current_hand_label = self:format_time(self.current_hand_time - self.current_hand_start, true)
 			self.alert_label = string.format("%s (%s)", self.current_hand_label, self.acceleration_label)
 		else
 			if self.current_hand_time > 0 then
 				self.last_hand = self.current_hand_time - self.current_hand_start
-				self.last_hand_label = self.format_time(self.last_hand, true)
+				self.last_hand_label = self:format_time(self.last_hand, true)
 				self.current_hand_time = 0
 				self.current_hand_start = 0
 				self.current_hand_label = "Not played yet"
@@ -72,7 +69,7 @@ TheFamily.own_tabs.time_tracker = {
 		end
 	end,
 
-	create_UI_popup = function(card)
+	create_UI_popup = function(self, card)
 		local function create_time_row(row)
 			return {
 				n = G.UIT.R,
@@ -141,34 +138,34 @@ TheFamily.own_tabs.time_tracker = {
 				{
 					create_time_row({
 						text = "Real time",
-						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_table = self,
 						ref_value = "real_time_label",
 					}),
 					create_time_row({
 						text = "This session",
-						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_table = self,
 						ref_value = "session_label",
 					}),
 					create_time_row({
 						text = "This run",
-						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_table = self,
 						ref_value = "this_run_label",
 					}),
 					create_time_row({
 						text = "Game speed",
-						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_table = self,
 						ref_value = "acceleration_label",
 					}),
 				},
 				{
 					create_time_row({
 						text = "Last hand",
-						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_table = self,
 						ref_value = "last_hand_label",
 					}),
 					create_time_row({
 						text = "Current hand",
-						ref_table = TheFamily.own_tabs.time_tracker,
+						ref_table = self,
 						ref_value = "current_hand_label",
 					}),
 					not card.highlighted and {
@@ -215,7 +212,7 @@ TheFamily.own_tabs.time_tracker = {
 			},
 		}
 	end,
-	create_UI_alert = function(card)
+	create_UI_alert = function(self, card)
 		if G.STATE ~= G.STATES.HAND_PLAYED and not TheFamily.cc.time_tracker.show_time_alert then
 			return nil
 		end
@@ -226,7 +223,7 @@ TheFamily.own_tabs.time_tracker = {
 					{
 						n = G.UIT.T,
 						config = {
-							ref_table = TheFamily.own_tabs.time_tracker,
+							ref_table = self,
 							ref_value = "alert_label",
 							colour = G.C.WHITE,
 							scale = 0.45 * info.scale,
@@ -236,40 +233,43 @@ TheFamily.own_tabs.time_tracker = {
 			end,
 		}
 	end,
+}, {})
 
-	tab = TheFamily.create_tab({
-		key = "thefamily_time",
-		order = 0,
-		group_key = "thefamily_general",
-		center = "v_hieroglyph",
-		type = "switch",
+TimeTracker.tab = TheFamily.create_tab({
+	key = "thefamily_time",
+	order = 0,
+	group_key = "thefamily_general",
+	center = "v_hieroglyph",
+	type = "switch",
 
-		loc_txt = {
-			name = "Time",
-			text = {
-				"Real time display and info about",
-				"current session/hand time duration",
-			},
+	original_mod_id = "TheFamily",
+	loc_txt = {
+		name = "Time",
+		text = {
+			"Real time display and info about",
+			"current session/hand time duration",
 		},
+	},
 
-		front_label = function()
-			return {
-				text = "Time",
-			}
-		end,
-		update = function(defitinion, card, dt)
-			TheFamily.own_tabs.time_tracker.update(dt)
-		end,
-		alert = function(definition, card)
-			return TheFamily.own_tabs.time_tracker.create_UI_alert(card)
-		end,
-		popup = function(definition, card)
-			return TheFamily.own_tabs.time_tracker.create_UI_popup(card)
-		end,
+	front_label = function()
+		return {
+			text = "Time",
+		}
+	end,
+	update = function(defitinion, card, dt)
+		TimeTracker:update(dt)
+	end,
+	alert = function(definition, card)
+		return TimeTracker:create_UI_alert(card)
+	end,
+	popup = function(definition, card)
+		return TimeTracker:create_UI_popup(card)
+	end,
 
-		keep_popup_when_highlighted = true,
-	}),
-}
+	keep_popup_when_highlighted = true,
+})
+
+TheFamily.own_tabs.time_tracker = TimeTracker
 
 function G.FUNCS.thefamily_update_time_tracker_time_format(arg)
 	TheFamily.config.current.time_tracker.format = arg.to_key

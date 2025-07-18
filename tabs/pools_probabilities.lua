@@ -15,7 +15,7 @@ TheFamily.create_tab_group({
 	},
 })
 
-TheFamily.own_tabs.pools_probabilities = {
+local PoolProbabilities = setmetatable({
 	keep_shop_slots_in_pool = true,
 
 	last_rerender = {
@@ -264,7 +264,11 @@ TheFamily.own_tabs.pools_probabilities = {
 			end
 		end
 		local is_softlocked = function(item)
-			return item.set == "Planet" and item.config.softlock and G.GAME.hands[item.config.hand_type].played == 0
+			return item.set == "Planet"
+				and item.config
+				and item.config.softlock
+				and item.config.hand_type
+				and (not G.GAME.hands[item.config.hand_type] or G.GAME.hands[item.config.hand_type].played == 0)
 		end
 
 		local has_rarity = false
@@ -601,102 +605,42 @@ TheFamily.own_tabs.pools_probabilities = {
 		return result
 	end,
 
-	get_UI_pools = function(self)
-		local pools = self:get_sorted_pools()
-		local result = {
+	create_UI_table_head = function(self, columns)
+		local result_columns = {}
+		for index, column in ipairs(columns) do
+			table.insert(result_columns, {
+				n = G.UIT.C,
+				config = {
+					minw = column.w or 1,
+					maxw = column.w or 1,
+					align = "cm",
+				},
+				nodes = {
+					{
+						n = G.UIT.T,
+						config = {
+							text = column.text,
+							scale = column.scale or 0.3,
+							colour = column.colour or G.C.UI.TEXT_DARK,
+							align = "cm",
+						},
+					},
+				},
+			})
+			if index < #columns then
+				table.insert(result_columns, {
+					n = G.UIT.C,
+				})
+			end
+		end
+		return {
 			{
 				n = G.UIT.R,
 				config = {
 					padding = 0.025,
 					align = "cm",
 				},
-				nodes = {
-					{
-						n = G.UIT.C,
-						config = {
-							minw = 2.5,
-							maxw = 2.5,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Card type",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Weight",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Left",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Rate",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-				},
+				nodes = result_columns,
 			},
 			{
 				n = G.UIT.R,
@@ -705,962 +649,390 @@ TheFamily.own_tabs.pools_probabilities = {
 				},
 			},
 		}
+	end,
+	create_UI_table_row = function(self, columns)
+		local result_columns = {}
+		for index, column in ipairs(columns) do
+			if column.badge then
+				table.insert(result_columns, {
+					n = G.UIT.C,
+					config = {
+						align = "cm",
+					},
+					nodes = {
+						{
+							n = G.UIT.R,
+							config = { align = "cm" },
+							nodes = {
+								{
+									n = G.UIT.R,
+									config = {
+										align = "cm",
+										colour = column.badge_colour or G.C.GREEN,
+										r = 0.1,
+										minw = 2.5,
+										minh = 0.25,
+										emboss = 0.05,
+										maxw = 2.5,
+										padding = 0.075,
+										detailed_tooltip = column.detailed_tooltip,
+									},
+									nodes = {
+										{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
+										{
+											n = G.UIT.O,
+											config = {
+												object = DynaText({
+													string = column.text or "ERROR",
+													colours = { column.badge_text_colour or G.C.WHITE },
+													shadow = true,
+													silent = true,
+													spacing = 1,
+													scale = 0.25,
+												}),
+											},
+										},
+										{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
+									},
+								},
+							},
+						},
+					},
+				})
+			else
+				local text_parts = {}
+				for _, part in ipairs(column.texts or {}) do
+					table.insert(text_parts, {
+						n = G.UIT.T,
+						config = {
+							text = part.text,
+							scale = part.scale or 0.3,
+							colour = part.colour or G.C.UI.TEXT_DARK,
+							align = "cm",
+						},
+					})
+				end
+				table.insert(result_columns, {
+					n = G.UIT.C,
+					config = {
+						minw = column.w or 1,
+						maxw = column.w or 1,
+						align = "cm",
+					},
+					nodes = text_parts,
+				})
+			end
+			if index < #columns then
+				table.insert(result_columns, {
+					n = G.UIT.C,
+				})
+			end
+		end
+		return {
+			n = G.UIT.R,
+			config = {
+				padding = 0.025,
+				align = "cm",
+			},
+			nodes = result_columns,
+		}
+	end,
+	create_UI_keep_shop_slots_in_pool_toggle = function(self, definition)
+		return create_toggle({
+			label = "",
+			ref_table = self,
+			ref_value = "keep_shop_slots_in_pool",
+			scale = 0.5,
+			label_scale = 0.3,
+			w = 0,
+			callback = function()
+				definition:rerender_popup()
+			end,
+		})
+	end,
+
+	get_UI_pools = function(self)
+		local pools = self:get_sorted_pools()
+		local result = self:create_UI_table_head({
+			{
+				w = 2.5,
+				text = "Card type",
+			},
+			{
+				w = 1.2,
+				text = "Weight",
+			},
+			{
+				w = 1.2,
+				text = "Left",
+			},
+			{
+				w = 1.2,
+				text = "Rate",
+			},
+		})
 		local pools_to_render, pagination = self:paginate_sorted_items(pools, 5, "Pool")
 		for _, pool in ipairs(pools_to_render) do
-			table.insert(result, {
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
+			table.insert(
+				result,
+				self:create_UI_table_row({
 					{
-						n = G.UIT.C,
-						config = {
-							align = "cm",
-						},
-						nodes = {
+						badge = true,
+						badge_colour = pool.badge_colour,
+						text = pool.localized,
+					},
+					{
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = { align = "cm" },
-								nodes = {
-									{
-										n = G.UIT.R,
-										config = {
-											align = "cm",
-											colour = pool.badge_colour,
-											r = 0.1,
-											minw = 2.5,
-											minh = 0.25,
-											emboss = 0.05,
-											maxw = 2.5,
-											padding = 0.075,
-										},
-										nodes = {
-											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
-											{
-												n = G.UIT.O,
-												config = {
-													object = DynaText({
-														string = pool.localized or "ERROR",
-														colours = { G.C.WHITE },
-														shadow = true,
-														silent = true,
-														spacing = 1,
-														scale = 0.25,
-													}),
-												},
-											},
-											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
-										},
-									},
-								},
+								text = string.format("%0.3f%%", pool.weight * 100),
+								colour = G.C.CHIPS,
 							},
 						},
 					},
 					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("%0.3f%%", pool.weight * 100),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
+								text = pool.no_rate and "-" or string.format("%s ", pool.items_left),
+								colour = G.C.CHIPS,
+							},
+							{
+								text = (pool.no_rate or pool.has_rarity) and "" or string.format(
+									"(%0.3f%%)",
+									pool.items_left == 0 and 0 or 1 / pool.items_left * 100
+								),
+								colour = adjust_alpha(G.C.UI.TEXT_DARK, 0.6),
 							},
 						},
 					},
 					{
-						n = G.UIT.C,
-						config = {
-							align = "cm",
-							maxw = 1.2,
-							minw = 1.2,
-						},
-						nodes = {
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = pool.no_rate and "-" or string.format("%s ", pool.items_left),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-									{
-										n = G.UIT.T,
-										config = {
-											text = (pool.no_rate or pool.has_rarity) and "" or string.format(
-												"(%0.3f%%)",
-												pool.items_left == 0 and 0 or 1 / pool.items_left * 100
-											),
-											colour = adjust_alpha(G.C.UI.TEXT_DARK, 0.6),
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
+								text = (pool.no_rate or pool.has_rarity) and "-" or string.format(
+									"%0.3f%%",
+									pool.items_left == 0 and 0 or pool.weight / pool.items_left * 100
+								),
+								colour = G.C.CHIPS,
 							},
 						},
 					},
-					{
-						n = G.UIT.C,
-						config = {
-							align = "cm",
-							maxw = 1.2,
-							minw = 1.2,
-						},
-						nodes = {
-							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = (pool.no_rate or pool.has_rarity) and "-"
-												or string.format(
-													"%0.3f%%",
-													pool.items_left == 0 and 0 or pool.weight / pool.items_left * 100
-												),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			})
+				})
+			)
 		end
 		table.insert(result, pagination)
 		return result
 	end,
 	get_UI_rarities = function(self)
 		local rarities = self:get_sorted_rarities()
-		local result = {
+		local result = self:create_UI_table_head({
 			{
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
-					{
-						n = G.UIT.C,
-						config = {
-							minw = 2.5,
-							maxw = 2.5,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Rarity",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Weight",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1,
-							minw = 1,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Left",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Rate",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-				},
+				w = 2.5,
+				text = "Rarity",
 			},
 			{
-				n = G.UIT.R,
-				config = {
-					minh = 0.05,
-				},
+				w = 1.2,
+				text = "Weight",
 			},
-		}
+			{
+				w = 1,
+				text = "Left",
+			},
+			{
+				w = 1.2,
+				text = "Rate",
+			},
+		})
 		local rarities_to_render, pagination = self:paginate_sorted_items(rarities, 8, "Rarity")
 		for _, rarity in ipairs(rarities_to_render) do
-			table.insert(result, {
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
+			table.insert(
+				result,
+				self:create_UI_table_row({
 					{
-						n = G.UIT.C,
-						config = {
-							align = "cm",
-						},
-						nodes = {
+						badge = true,
+						text = rarity.localized,
+						badge_colour = rarity.badge_colour,
+					},
+					{
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = { align = "cm" },
-								nodes = {
-									{
-										n = G.UIT.R,
-										config = {
-											align = "cm",
-											colour = rarity.badge_colour or G.C.GREEN,
-											r = 0.1,
-											minw = 2.5,
-											minh = 0.25,
-											emboss = 0.05,
-											maxw = 2.5,
-											padding = 0.075,
-										},
-										nodes = {
-											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
-											{
-												n = G.UIT.O,
-												config = {
-													object = DynaText({
-														string = rarity.localized or "ERROR",
-														colours = { G.C.WHITE },
-														shadow = true,
-														silent = true,
-														spacing = 1,
-														scale = 0.25,
-													}),
-												},
-											},
-											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
-										},
-									},
-								},
+								text = string.format("%0.3f%%", rarity.weight * 100),
+								colour = G.C.CHIPS,
 							},
 						},
 					},
 					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
+						w = 1,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("%0.3f%%", rarity.weight * 100),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
+								text = string.format("%s", rarity.items_left),
+								colour = G.C.CHIPS,
 							},
 						},
 					},
 					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							align = "cm",
-							maxw = 1,
-							minw = 1,
-						},
-						nodes = {
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("%s", rarity.items_left),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
+								text = string.format(
+									"%0.3f%%",
+									rarity.items_left == 0 and 0 or rarity.weight / rarity.items_left * 100
+								),
+								colour = G.C.CHIPS,
 							},
 						},
 					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format(
-												"%0.3f%%",
-												rarity.items_left == 0 and 0 or rarity.weight / rarity.items_left * 100
-											),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			})
+				})
+			)
 		end
 		table.insert(result, pagination)
 		return result
 	end,
 	get_UI_pool = function(self, pool, first_column)
 		local editions = self:get_sorted_pool(pool)
-		local result = {
+		local result = self:create_UI_table_head({
 			{
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
-					{
-						n = G.UIT.C,
-						config = {
-							minw = 2.5,
-							maxw = 2.5,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = first_column,
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Weight",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Rate",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-				},
+				w = 2.5,
+				text = first_column,
 			},
 			{
-				n = G.UIT.R,
-				config = {
-					minh = 0.05,
-				},
+				w = 1.2,
+				text = "Weight",
 			},
-		}
+			{
+				w = 1.2,
+				text = "Rate",
+			},
+		})
 		local pools_to_render, pagination = self:paginate_sorted_items(editions, 8, pool)
 		for _, edition in ipairs(pools_to_render) do
-			table.insert(result, {
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
+			table.insert(
+				result,
+				self:create_UI_table_row({
 					{
-						n = G.UIT.C,
-						config = {
-							align = "cm",
-						},
-						nodes = {
+						badge = true,
+						badge_colour = edition.badge_colour,
+						detailed_tooltip = edition.detailed_tooltip,
+						text = edition.localized,
+					},
+					{
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = { align = "cm" },
-								nodes = {
-									{
-										n = G.UIT.R,
-										config = {
-											align = "cm",
-											colour = edition.badge_colour,
-											r = 0.1,
-											minw = 2.5,
-											minh = 0.25,
-											emboss = 0.05,
-											maxw = 2.5,
-											padding = 0.075,
-											detailed_tooltip = edition.detailed_tooltip,
-										},
-										nodes = {
-											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
-											{
-												n = G.UIT.O,
-												config = {
-													object = DynaText({
-														string = edition.localized or "ERROR",
-														colours = { G.C.WHITE },
-														shadow = true,
-														silent = true,
-														spacing = 1,
-														scale = 0.25,
-													}),
-												},
-											},
-											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
-										},
-									},
-								},
+								text = string.format("%0.3f%%", edition.weight * 100),
+								colour = G.C.CHIPS,
 							},
 						},
 					},
 					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("%0.3f%%", edition.weight * 100),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
+								text = string.format("%0.3f%%", edition.rate * 100),
+								colour = G.C.CHIPS,
 							},
 						},
 					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							align = "cm",
-							maxw = 1.2,
-							minw = 1.2,
-						},
-						nodes = {
-							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("%0.3f%%", edition.rate * 100),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			})
+				})
+			)
 		end
 		table.insert(result, pagination)
 		return result
 	end,
 	get_UI_boosters = function(self)
 		local pools = self:get_sorted_boosters()
-		local result = {
+		local result = self:create_UI_table_head({
 			{
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
-					{
-						n = G.UIT.C,
-						config = {
-							minw = 2.5,
-							maxw = 2.5,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Booster type",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Weight",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-				},
+				w = 2.5,
+				text = "Booster pack",
 			},
 			{
-				n = G.UIT.R,
-				config = {
-					minh = 0.05,
-				},
+				w = 1.2,
+				text = "Weight",
 			},
-		}
+		})
 		local pools_to_render, pagination = self:paginate_sorted_items(pools, 8, "Booster")
 		for _, pool in ipairs(pools_to_render) do
-			table.insert(result, {
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
+			table.insert(
+				result,
+				self:create_UI_table_row({
 					{
-						n = G.UIT.C,
-						config = {
-							align = "cm",
-						},
-						nodes = {
+						badge = true,
+						badge_colour = pool.badge_colour,
+						detailed_tooltip = pool.detailed_tooltip,
+						text = pool.localized,
+					},
+					{
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = { align = "cm" },
-								nodes = {
-									{
-										n = G.UIT.R,
-										config = {
-											align = "cm",
-											colour = pool.badge_colour,
-											r = 0.1,
-											minw = 2.5,
-											minh = 0.25,
-											maxw = 2.5,
-											emboss = 0.05,
-											padding = 0.075,
-											detailed_tooltip = pool.detailed_tooltip,
-										},
-										nodes = {
-											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
-											{
-												n = G.UIT.O,
-												config = {
-													object = DynaText({
-														string = pool.localized or "ERROR",
-														colours = { G.C.WHITE },
-														shadow = true,
-														silent = true,
-														spacing = 1,
-														scale = 0.25,
-													}),
-												},
-											},
-											{ n = G.UIT.B, config = { h = 0.1, w = 0.03 } },
-										},
-									},
-								},
+								text = string.format("%0.3f%%", pool.weight * 100),
+								colour = G.C.CHIPS,
 							},
 						},
 					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("%0.3f%%", pool.weight * 100),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			})
+				})
+			)
 		end
 		table.insert(result, pagination)
 		return result
 	end,
 	get_UI_vouchers = function(self)
 		local vouchers = self:get_sorted_vouchers()
-		local result = {
+		local result = self:create_UI_table_head({
 			{
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
-					{
-						n = G.UIT.C,
-						config = {
-							minw = 1.2,
-							maxw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Level",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Weight",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
-							{
-								n = G.UIT.T,
-								config = {
-									text = "Left",
-									scale = 0.3,
-									colour = G.C.UI.TEXT_DARK,
-									align = "cm",
-								},
-							},
-						},
-					},
-				},
+				w = 1.2,
+				text = "Level",
 			},
 			{
-				n = G.UIT.R,
-				config = {
-					minh = 0.05,
-				},
+				w = 1.2,
+				text = "Weight",
 			},
-		}
+			{
+				w = 1.2,
+				text = "Left",
+			},
+		})
 		local pools_to_render, pagination = self:paginate_sorted_items(vouchers, 10, "Voucher")
 		for _, rarity in ipairs(pools_to_render) do
-			table.insert(result, {
-				n = G.UIT.R,
-				config = {
-					padding = 0.025,
-					align = "cm",
-				},
-				nodes = {
+			table.insert(
+				result,
+				self:create_UI_table_row({
 					{
-						n = G.UIT.C,
-						config = {
-							align = "cm",
-							maxw = 1.2,
-							minw = 1.2,
-						},
-						nodes = {
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("Level %s", rarity.level),
-											colour = G.C.SECONDARY_SET.Voucher,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
+								text = string.format("Level %s", rarity.level),
+								colour = G.C.SECONDARY_SET.Voucher,
 							},
 						},
 					},
 					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							maxw = 1.2,
-							minw = 1.2,
-							align = "cm",
-						},
-						nodes = {
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("%0.3f%%", rarity.weight * 100),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
+								text = string.format("%0.3f%%", rarity.weight * 100),
+								colour = G.C.CHIPS,
 							},
 						},
 					},
 					{
-						n = G.UIT.C,
-					},
-					{
-						n = G.UIT.C,
-						config = {
-							align = "cm",
-							maxw = 1.2,
-							minw = 1.2,
-						},
-						nodes = {
+						w = 1.2,
+						texts = {
 							{
-								n = G.UIT.R,
-								config = {
-									align = "cm",
-								},
-								nodes = {
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("%s ", rarity.items_left),
-											colour = G.C.CHIPS,
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-									{
-										n = G.UIT.T,
-										config = {
-											text = string.format("(%0.3f%%)", rarity.rate * 100),
-											colour = adjust_alpha(G.C.UI.TEXT_DARK, 0.6),
-											scale = 0.3,
-											align = "cm",
-										},
-									},
-								},
+								text = string.format("%s ", rarity.items_left),
+								colour = G.C.CHIPS,
+							},
+							{
+								text = string.format("(%0.3f%%)", rarity.rate * 100),
+								colour = adjust_alpha(G.C.UI.TEXT_DARK, 0.6),
 							},
 						},
 					},
-				},
-			})
+				})
+			)
 		end
 		table.insert(result, pagination)
 		return result
@@ -1711,17 +1083,7 @@ TheFamily.own_tabs.pools_probabilities = {
 							{
 								n = G.UIT.C,
 								nodes = {
-									create_toggle({
-										label = "",
-										ref_table = TheFamily.own_tabs.pools_probabilities,
-										ref_value = "keep_shop_slots_in_pool",
-										scale = 0.5,
-										label_scale = 0.3,
-										w = 0,
-										callback = function()
-											definition:rerender_popup()
-										end,
-									}),
+									self:create_UI_keep_shop_slots_in_pool_toggle(definition),
 								},
 							},
 							{
@@ -1790,17 +1152,7 @@ TheFamily.own_tabs.pools_probabilities = {
 							{
 								n = G.UIT.C,
 								nodes = {
-									create_toggle({
-										label = "",
-										ref_table = TheFamily.own_tabs.pools_probabilities,
-										ref_value = "keep_shop_slots_in_pool",
-										scale = 0.5,
-										label_scale = 0.3,
-										w = 0,
-										callback = function()
-											definition:rerender_popup()
-										end,
-									}),
+									self:create_UI_keep_shop_slots_in_pool_toggle(definition),
 								},
 							},
 							{
@@ -1885,286 +1237,253 @@ TheFamily.own_tabs.pools_probabilities = {
 			},
 		}
 	end,
+}, {})
+PoolProbabilities.tabs = {
+	Pool = TheFamily.create_tab({
+		key = "thefamily_pools_pools",
+		order = 1,
+		group_key = "thefamily_shop_pools",
+		center = "v_overstock_norm",
+		type = "switch",
 
-	tabs = {
-		Pool = TheFamily.create_tab({
-			key = "thefamily_pools_pools",
-			order = 1,
-			group_key = "thefamily_shop_pools",
-			center = "v_overstock_norm",
-			type = "switch",
+		original_mod_id = "TheFamily",
+		loc_txt = {
+			name = "Card types",
+		},
 
-			original_mod_id = "TheFamily",
-			loc_txt = {
-				name = "Card types",
-			},
+		front_label = function()
+			return {
+				text = "Card types",
+			}
+		end,
+		popup = function(definition, card)
+			PoolProbabilities.last_rerender.Pool = love.timer.getTime()
+			return PoolProbabilities:create_UI_pools_popup(definition, card)
+		end,
+		update = function(definition, card, dt)
+			local now = love.timer.getTime()
+			if card and card.children.popup and PoolProbabilities.last_rerender.Pool + 3 < now then
+				PoolProbabilities.last_rerender.Pool = now
+				definition:rerender_popup()
+			end
+		end,
 
-			front_label = function()
-				return {
-					text = "Card types",
-				}
-			end,
-			popup = function(definition, card)
-				TheFamily.own_tabs.pools_probabilities.last_rerender.Pool = love.timer.getTime()
-				return TheFamily.own_tabs.pools_probabilities:create_UI_pools_popup(definition, card)
-			end,
-			update = function(definition, card, dt)
-				local now = love.timer.getTime()
-				if
-					card
-					and card.children.popup
-					and TheFamily.own_tabs.pools_probabilities.last_rerender.Pool + 3 < now
-				then
-					TheFamily.own_tabs.pools_probabilities.last_rerender.Pool = now
-					definition:rerender_popup()
-				end
-			end,
+		keep_popup_when_highlighted = true,
+	}),
+	Rarity = TheFamily.create_tab({
+		key = "thefamily_pools_rarities",
+		order = 2,
+		group_key = "thefamily_shop_pools",
+		center = "v_hone",
+		type = "switch",
 
-			keep_popup_when_highlighted = true,
-		}),
-		Rarity = TheFamily.create_tab({
-			key = "thefamily_pools_rarities",
-			order = 2,
-			group_key = "thefamily_shop_pools",
-			center = "v_hone",
-			type = "switch",
+		original_mod_id = "TheFamily",
+		loc_txt = {
+			name = "Rarities",
+		},
 
-			original_mod_id = "TheFamily",
-			loc_txt = {
-				name = "Rarities",
-			},
+		front_label = function()
+			return {
+				text = "Rarities",
+			}
+		end,
+		popup = function(definition, card)
+			PoolProbabilities.last_rerender.Rarity = love.timer.getTime()
+			return PoolProbabilities:create_UI_rarities_popup(definition, card)
+		end,
+		update = function(defuninition, card, dt)
+			local now = love.timer.getTime()
+			if card and card.children.popup and PoolProbabilities.last_rerender.Rarity + 3 < now then
+				PoolProbabilities.last_rerender.Rarity = now
+				defuninition:rerender_popup()
+			end
+		end,
 
-			front_label = function()
-				return {
-					text = "Rarities",
-				}
-			end,
-			popup = function(definition, card)
-				TheFamily.own_tabs.pools_probabilities.last_rerender.Rarity = love.timer.getTime()
-				return TheFamily.own_tabs.pools_probabilities:create_UI_rarities_popup(definition, card)
-			end,
-			update = function(defuninition, card, dt)
-				local now = love.timer.getTime()
-				if
-					card
-					and card.children.popup
-					and TheFamily.own_tabs.pools_probabilities.last_rerender.Rarity + 3 < now
-				then
-					TheFamily.own_tabs.pools_probabilities.last_rerender.Rarity = now
-					defuninition:rerender_popup()
-				end
-			end,
+		keep_popup_when_highlighted = true,
+	}),
+	Enhanced = TheFamily.create_tab({
+		key = "thefamily_pools_enhanced",
+		order = 3,
+		group_key = "thefamily_shop_pools",
+		center = "v_tarot_tycoon",
+		type = "switch",
 
-			keep_popup_when_highlighted = true,
-		}),
-		Enhanced = TheFamily.create_tab({
-			key = "thefamily_pools_enhanced",
-			order = 3,
-			group_key = "thefamily_shop_pools",
-			center = "v_tarot_tycoon",
-			type = "switch",
+		original_mod_id = "TheFamily",
+		loc_txt = {
+			name = "Enhancements",
+		},
 
-			original_mod_id = "TheFamily",
-			loc_txt = {
-				name = "Enhancements",
-			},
+		front_label = function()
+			return {
+				text = "Enhancements",
+			}
+		end,
+		popup = function(definition, card)
+			PoolProbabilities.last_rerender.Enhanced = love.timer.getTime()
+			return PoolProbabilities:create_UI_pool_popup(
+				definition,
+				card,
+				"Enhanced",
+				"Shop probabilities: Enhancements",
+				"Enhancement"
+			)
+		end,
+		update = function(defuninition, card, dt)
+			local now = love.timer.getTime()
+			if card and card.children.popup and PoolProbabilities.last_rerender.Enhanced + 3 < now then
+				PoolProbabilities.last_rerender.Enhanced = now
+				defuninition:rerender_popup()
+			end
+		end,
 
-			front_label = function()
-				return {
-					text = "Enhancements",
-				}
-			end,
-			popup = function(definition, card)
-				TheFamily.own_tabs.pools_probabilities.last_rerender.Enhanced = love.timer.getTime()
-				return TheFamily.own_tabs.pools_probabilities:create_UI_pool_popup(
-					definition,
-					card,
-					"Enhanced",
-					"Shop probabilities: Enhancements",
-					"Enhancement"
-				)
-			end,
-			update = function(defuninition, card, dt)
-				local now = love.timer.getTime()
-				if
-					card
-					and card.children.popup
-					and TheFamily.own_tabs.pools_probabilities.last_rerender.Enhanced + 3 < now
-				then
-					TheFamily.own_tabs.pools_probabilities.last_rerender.Enhanced = now
-					defuninition:rerender_popup()
-				end
-			end,
+		keep_popup_when_highlighted = true,
+	}),
+	Seal = TheFamily.create_tab({
+		key = "thefamily_pools_seal",
+		order = 4,
+		group_key = "thefamily_shop_pools",
+		center = "v_illusion",
+		type = "switch",
 
-			keep_popup_when_highlighted = true,
-		}),
-		Seal = TheFamily.create_tab({
-			key = "thefamily_pools_seal",
-			order = 4,
-			group_key = "thefamily_shop_pools",
-			center = "v_illusion",
-			type = "switch",
+		original_mod_id = "TheFamily",
+		loc_txt = {
+			name = "Seals",
+		},
 
-			original_mod_id = "TheFamily",
-			loc_txt = {
-				name = "Seals",
-			},
+		front_label = function()
+			return {
+				text = "Seals",
+			}
+		end,
+		popup = function(definition, card)
+			PoolProbabilities.last_rerender.Seal = love.timer.getTime()
+			return PoolProbabilities:create_UI_pool_popup(definition, card, "Seal", "Shop probabilities: Seals", "Seal")
+		end,
+		update = function(defuninition, card, dt)
+			local now = love.timer.getTime()
+			if card and card.children.popup and PoolProbabilities.last_rerender.Seal + 3 < now then
+				PoolProbabilities.last_rerender.Seal = now
+				defuninition:rerender_popup()
+			end
+		end,
 
-			front_label = function()
-				return {
-					text = "Seals",
-				}
-			end,
-			popup = function(definition, card)
-				TheFamily.own_tabs.pools_probabilities.last_rerender.Seal = love.timer.getTime()
-				return TheFamily.own_tabs.pools_probabilities:create_UI_pool_popup(
-					definition,
-					card,
-					"Seal",
-					"Shop probabilities: Seals",
-					"Seal"
-				)
-			end,
-			update = function(defuninition, card, dt)
-				local now = love.timer.getTime()
-				if
-					card
-					and card.children.popup
-					and TheFamily.own_tabs.pools_probabilities.last_rerender.Seal + 3 < now
-				then
-					TheFamily.own_tabs.pools_probabilities.last_rerender.Seal = now
-					defuninition:rerender_popup()
-				end
-			end,
+		keep_popup_when_highlighted = true,
+	}),
+	Edition = TheFamily.create_tab({
+		key = "thefamily_pools_editions",
+		order = 5,
+		group_key = "thefamily_shop_pools",
+		center = "v_glow_up",
+		type = "switch",
 
-			keep_popup_when_highlighted = true,
-		}),
-		Edition = TheFamily.create_tab({
-			key = "thefamily_pools_editions",
-			order = 5,
-			group_key = "thefamily_shop_pools",
-			center = "v_glow_up",
-			type = "switch",
+		original_mod_id = "TheFamily",
+		loc_txt = {
+			name = "Editions",
+		},
 
-			original_mod_id = "TheFamily",
-			loc_txt = {
-				name = "Editions",
-			},
+		front_label = function()
+			return {
+				text = "Editions",
+			}
+		end,
+		popup = function(definition, card)
+			PoolProbabilities.last_rerender.Edition = love.timer.getTime()
+			return PoolProbabilities:create_UI_pool_popup(
+				definition,
+				card,
+				"Edition",
+				"Shop probabilities: Editions",
+				"Edition"
+			)
+		end,
+		update = function(defuninition, card, dt)
+			local now = love.timer.getTime()
+			if card and card.children.popup and PoolProbabilities.last_rerender.Edition + 3 < now then
+				PoolProbabilities.last_rerender.Edition = now
+				defuninition:rerender_popup()
+			end
+		end,
 
-			front_label = function()
-				return {
-					text = "Editions",
-				}
-			end,
-			popup = function(definition, card)
-				TheFamily.own_tabs.pools_probabilities.last_rerender.Edition = love.timer.getTime()
-				return TheFamily.own_tabs.pools_probabilities:create_UI_pool_popup(
-					definition,
-					card,
-					"Edition",
-					"Shop probabilities: Editions",
-					"Edition"
-				)
-			end,
-			update = function(defuninition, card, dt)
-				local now = love.timer.getTime()
-				if
-					card
-					and card.children.popup
-					and TheFamily.own_tabs.pools_probabilities.last_rerender.Edition + 3 < now
-				then
-					TheFamily.own_tabs.pools_probabilities.last_rerender.Edition = now
-					defuninition:rerender_popup()
-				end
-			end,
+		keep_popup_when_highlighted = true,
+	}),
+	Booster = TheFamily.create_tab({
+		key = "thefamily_pools_boosters",
+		order = 6,
+		group_key = "thefamily_shop_pools",
+		center = "v_overstock_plus",
+		type = "switch",
 
-			keep_popup_when_highlighted = true,
-		}),
-		Booster = TheFamily.create_tab({
-			key = "thefamily_pools_boosters",
-			order = 6,
-			group_key = "thefamily_shop_pools",
-			center = "v_overstock_plus",
-			type = "switch",
+		original_mod_id = "TheFamily",
+		loc_txt = {
+			name = "Booster packs",
+		},
 
-			original_mod_id = "TheFamily",
-			loc_txt = {
-				name = "Booster packs",
-			},
+		front_label = function()
+			return {
+				text = "Booster packs",
+			}
+		end,
+		popup = function(definition, card)
+			PoolProbabilities.last_rerender.Booster = love.timer.getTime()
+			return PoolProbabilities:create_UI_boosters_popup(definition, card)
+		end,
+		update = function(definition, card, dt)
+			local now = love.timer.getTime()
+			if card and card.children.popup and PoolProbabilities.last_rerender.Booster + 3 < now then
+				PoolProbabilities.last_rerender.Booster = now
+				definition:rerender_popup()
+			end
+		end,
 
-			front_label = function()
-				return {
-					text = "Booster packs",
-				}
-			end,
-			popup = function(definition, card)
-				TheFamily.own_tabs.pools_probabilities.last_rerender.Booster = love.timer.getTime()
-				return TheFamily.own_tabs.pools_probabilities:create_UI_boosters_popup(definition, card)
-			end,
-			update = function(definition, card, dt)
-				local now = love.timer.getTime()
-				if
-					card
-					and card.children.popup
-					and TheFamily.own_tabs.pools_probabilities.last_rerender.Booster + 3 < now
-				then
-					TheFamily.own_tabs.pools_probabilities.last_rerender.Booster = now
-					definition:rerender_popup()
-				end
-			end,
+		keep_popup_when_highlighted = true,
+	}),
+	Voucher = TheFamily.create_tab({
+		key = "thefamily_pools_vouchers",
+		order = 7,
+		group_key = "thefamily_shop_pools",
+		center = "v_antimatter",
+		type = "switch",
 
-			keep_popup_when_highlighted = true,
-		}),
-		Voucher = TheFamily.create_tab({
-			key = "thefamily_pools_vouchers",
-			order = 7,
-			group_key = "thefamily_shop_pools",
-			center = "v_antimatter",
-			type = "switch",
+		original_mod_id = "TheFamily",
+		loc_txt = {
+			name = "Vouchers",
+		},
 
-			original_mod_id = "TheFamily",
-			loc_txt = {
-				name = "Vouchers",
-			},
+		front_label = function()
+			return {
+				text = "Vouchers",
+			}
+		end,
+		popup = function(definition, card)
+			PoolProbabilities.last_rerender.Voucher = love.timer.getTime()
+			return PoolProbabilities:create_UI_vouchers_popup(definition, card)
+		end,
+		update = function(definition, card, dt)
+			local now = love.timer.getTime()
+			if card and card.children.popup and PoolProbabilities.last_rerender.Voucher + 3 < now then
+				PoolProbabilities.last_rerender.Voucher = now
+				definition:rerender_popup()
+			end
+		end,
 
-			front_label = function()
-				return {
-					text = "Vouchers",
-				}
-			end,
-			popup = function(definition, card)
-				TheFamily.own_tabs.pools_probabilities.last_rerender.Voucher = love.timer.getTime()
-				return TheFamily.own_tabs.pools_probabilities:create_UI_vouchers_popup(definition, card)
-			end,
-			update = function(definition, card, dt)
-				local now = love.timer.getTime()
-				if
-					card
-					and card.children.popup
-					and TheFamily.own_tabs.pools_probabilities.last_rerender.Voucher + 3 < now
-				then
-					TheFamily.own_tabs.pools_probabilities.last_rerender.Voucher = now
-					definition:rerender_popup()
-				end
-			end,
-
-			keep_popup_when_highlighted = true,
-		}),
-	},
+		keep_popup_when_highlighted = true,
+	}),
 }
+
+TheFamily.own_tabs.pools_probabilities = PoolProbabilities
 
 --
 
 function G.FUNCS.thefamily_update_pools_modifier_index(arg)
-	TheFamily.own_tabs.pools_probabilities.modifier_index = arg.to_key
-	for pool, tab in pairs(TheFamily.own_tabs.pools_probabilities.tabs) do
+	PoolProbabilities.modifier_index = arg.to_key
+	for pool, tab in pairs(PoolProbabilities.tabs) do
 		tab:rerender_popup()
 	end
 end
 function G.FUNCS.thefamily_update_pools_page(arg)
 	local pool = arg.cycle_config.thefamily_pool
-	TheFamily.own_tabs.pools_probabilities.pages[pool] = arg.to_key
-	local tab = TheFamily.own_tabs.pools_probabilities.tabs[arg.cycle_config.thefamily_pool]
+	PoolProbabilities.pages[pool] = arg.to_key
+	local tab = PoolProbabilities.tabs[arg.cycle_config.thefamily_pool]
 	if tab then
 		tab:rerender_popup()
 	end
