@@ -17,8 +17,8 @@ function TheFamilyCardArea:init()
 		highlight_limit = 1,
 	})
 	self.cards = self.cards or {}
-	self.states.collide.can = true
-	self.states.hover.can = true
+	self.states.collide.can = false
+	self.states.hover.can = false
 
 	self.opened_tabs = {
 		--- @type table<string, TheFamilyTab>
@@ -96,6 +96,8 @@ function TheFamilyCardArea:_create_container()
 		},
 		config = config,
 	})
+	area_container.states.collide.can = false
+	area_container.states.hover.can = false
 	if TheFamily.UI.area_container then
 		TheFamily.UI.area_container:remove()
 	end

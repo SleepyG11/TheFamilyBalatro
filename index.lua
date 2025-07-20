@@ -46,7 +46,7 @@ TheFamily.enabled_tabs = {
 	list = {},
 }
 
-function TheFamily.toggle_and_sort_tabs_and_groups()
+function TheFamily.toggle_and_sort_tabs_and_groups(with_load)
 	EMPTY(TheFamily.enabled_tabs.list)
 	EMPTY(TheFamily.enabled_tabs.dictionary)
 
@@ -87,11 +87,18 @@ function TheFamily.toggle_and_sort_tabs_and_groups()
 		EMPTY(group.enabled_tabs.dictionary)
 		if group:_enabled() then
 			for _, tab in ipairs(group.tabs.list) do
-				if tab:_enabled() then
-					table.insert(group.enabled_tabs.list, tab)
-					group.enabled_tabs.dictionary[tab.key] = tab
-					table.insert(TheFamily.enabled_tabs.list, tab)
-					TheFamily.enabled_tabs.dictionary[tab.key] = tab
+				local is_tab_enabled = tab:_cached_enabled(with_load)
+				local is_tab_disabled = tab:_disabled()
+				if is_tab_enabled then
+					if with_load then
+						tab:load(is_tab_disabled)
+					end
+					if not is_tab_disabled then
+						table.insert(group.enabled_tabs.list, tab)
+						group.enabled_tabs.dictionary[tab.key] = tab
+						table.insert(TheFamily.enabled_tabs.list, tab)
+						TheFamily.enabled_tabs.dictionary[tab.key] = tab
+					end
 				end
 			end
 		end
@@ -144,7 +151,7 @@ function TheFamily.init()
 	-- Allow hover click events appear far outside of visible area
 	G.DRAW_HASH_BUFF = 10
 
-	TheFamily.toggle_and_sort_tabs_and_groups()
+	TheFamily.toggle_and_sort_tabs_and_groups(true)
 
 	local ui_values = TheFamily.UI.get_ui_values()
 	TheFamily.UI.max_page = math.ceil(#TheFamily.enabled_tabs.list / ui_values.tabs_per_page)

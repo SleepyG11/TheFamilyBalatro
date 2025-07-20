@@ -50,6 +50,7 @@ function TheFamilyTab:init(params)
 
 	self.update = only_function(params.update, self.update)
 	self.click = only_function(params.click, self.click)
+	self.load = only_function(params.load, self.load)
 
 	self.enabled = only_function(params.enabled, self.enabled)
 	self.can_be_disabled = params.can_be_disabled or false
@@ -74,7 +75,7 @@ function TheFamilyTab:init(params)
 end
 
 function TheFamilyTab:_enabled()
-	return not self:_disabled() and self:enabled()
+	return self:_cached_enabled() and not self:_disabled()
 end
 function TheFamilyTab:_disabled()
 	return (self.group and self.group:_disabled_by_user()) or self:_disabled_by_user()
@@ -87,9 +88,18 @@ function TheFamilyTab:_toggle_by_user()
 	local old_disabled = self:_disabled()
 	TheFamily.cc.disabled_tabs[self.key] = not TheFamily.cc.disabled_tabs[self.key]
 	local new_disabled = self:_disabled()
+	if new_disabled then
+		self:close()
+	end
 	if not not new_disabled ~= not not old_disabled then
 		self:disabled_change(new_disabled, false)
 	end
+end
+function TheFamilyTab:_cached_enabled(no_cache)
+	if no_cache or self.is_enabled == nil then
+		self.is_enabled = not not self:enabled()
+	end
+	return self.is_enabled
 end
 function TheFamilyTab:enabled()
 	return true
@@ -105,6 +115,7 @@ function TheFamilyTab:highlight(card) end
 function TheFamilyTab:unhighlight(card) end
 function TheFamilyTab:click(card) end
 function TheFamilyTab:update(card, dt) end
+function TheFamilyTab:load() end
 
 function TheFamilyTab:front_label(card) end
 function TheFamilyTab:popup(card) end
@@ -273,7 +284,7 @@ function TheFamilyTab:prepare_config_card(card)
 			local current_mod = tab.original_mod_id and SMODS and SMODS.Mods and SMODS.Mods[tab.original_mod_id]
 			local localization = G.localization.descriptions["TheFamily_Tab"][tab.key] or {}
 
-			local is_enabled = tab:enabled()
+			local is_enabled = tab:_cached_enabled()
 			local is_disabled_by_user = tab:_disabled_by_user()
 			local can_be_disabled = tab.can_be_disabled or (tab.group and tab.group.can_be_disabled)
 
