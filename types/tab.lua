@@ -25,7 +25,8 @@
 --- ```lua
 --- { n = G.UIT.T, config = <returned value> }
 --- ```
---- @alias TheFamilyTabFrontLabelDefinition fun(self: TheFamilyTab, card: Card): INodeConfig | { remove: true } | nil
+--- String can be used aswell as shorthand for declaring function which returns text.
+--- @alias TheFamilyTabFrontLabelDefinition fun(self: TheFamilyTab, card: Card): INodeConfig | { remove: true } | string | nil
 
 --- Definition of popup which will be displayed when tab's card is hovered.<br>
 --- <br>

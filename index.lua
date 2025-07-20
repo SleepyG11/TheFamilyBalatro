@@ -141,6 +141,9 @@ function TheFamily.emplace_steamodded()
 end
 
 function TheFamily.init()
+	-- Allow hover click events appear far outside of visible area
+	G.DRAW_HASH_BUFF = 10
+
 	TheFamily.toggle_and_sort_tabs_and_groups()
 
 	local ui_values = TheFamily.UI.get_ui_values()

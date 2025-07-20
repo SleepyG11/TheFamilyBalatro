@@ -29,9 +29,18 @@ function TheFamilyTab:init(params)
 
 	self.front = params.front or nil
 	self.center = params.center or "c_base"
-	self.front_label = params.front_label or nil
-	self.popup = params.popup or nil
-	self.alert = params.alert or nil
+
+	local front_func = params.front_label
+	if type(front_func) == "string" then
+		front_func = function()
+			return {
+				text = params.front_label,
+			}
+		end
+	end
+	self.front_label = only_function(front_func, self.front_label)
+	self.popup = only_function(params.popup, self.popup)
+	self.alert = only_function(params.alert, self.alert)
 	self.keep_popup_when_highlighted = params.keep_popup_when_highlighted or false
 
 	self.can_highlight = only_function(params.can_highlight, self.can_highlight)
