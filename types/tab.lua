@@ -94,9 +94,9 @@
 --- @field load_index number
 --- @field group? TheFamilyGroup
 --- @field card? Card Card which represents tab
---- @field rerender_front_label fun() Function to manually rerender front_label
---- @field rerender_popup fun() Function to manually rerender popup
---- @field rerender_alert fun() Function to manually rerender alert
+--- @field rerender_front_label fun(self: TheFamilyTab) Function to manually rerender front_label
+--- @field rerender_popup fun(self: TheFamilyTab) Function to manually rerender popup
+--- @field rerender_alert fun(self: TheFamilyTab) Function to manually rerender alert
 --- @field open fun(self: TheFamilyTab, without_callbacks?: boolean) Manually open tab. All checks applied. If `without_callbacks = true`, highlight events will not be fired
 --- @field close fun(self: TheFamilyTab, without_callbacks?: boolean) Manually close tab. All checks applied. If `without_callbacks = true`, unhighlight events will not be fired
 
