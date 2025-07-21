@@ -133,3 +133,18 @@ function TheFamily.utils.merge_localization(ref_table, ref_value, loc_txt, defau
 	ref_table[ref_value] = TheFamily.utils.table_merge(default or {}, ref_table[ref_value] or {}, loc_txt or {})
 	return ref_table[ref_value]
 end
+
+function TheFamily.utils.cleanup_dead_elements(ref_table, ref_key)
+	local new_values = {}
+	local target = ref_table[ref_key]
+	if not target then
+		return
+	end
+	for k, v in pairs(target) do
+		if not v.REMOVED and not v.removed then
+			new_values[#new_values + 1] = v
+		end
+	end
+	ref_table[ref_key] = new_values
+	return new_values
+end

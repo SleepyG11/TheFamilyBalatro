@@ -482,6 +482,7 @@ function TheFamilyTab:remove_front_label()
 		if self.card.children.front_label then
 			self.card.children.front_label:remove()
 			self.card.children.front_label = nil
+			TheFamily.utils.cleanup_dead_elements(G, "MOVEABLES")
 		end
 	end
 end
@@ -490,6 +491,7 @@ function TheFamilyTab:remove_alert()
 		if self.card.children.alert then
 			self.card.children.alert:remove()
 			self.card.children.alert = nil
+			TheFamily.utils.cleanup_dead_elements(G, "MOVEABLES")
 		end
 	end
 end
@@ -498,6 +500,7 @@ function TheFamilyTab:remove_popup()
 		if self.card.children.popup then
 			self.card.children.popup:remove()
 			self.card.children.popup = nil
+			TheFamily.utils.cleanup_dead_elements(G, "MOVEABLES")
 		end
 	end
 end
