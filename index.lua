@@ -1,5 +1,5 @@
 TheFamily = setmetatable({
-	version = "0.1.2a",
+	version = "0.1.2b",
 }, {})
 
 TheFamily.SWITCH_OVERLAYS = {
