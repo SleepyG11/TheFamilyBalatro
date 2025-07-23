@@ -95,7 +95,7 @@ function TheFamilyGroup:prepare_config_card(card)
 			local current_mod = group.original_mod_id and SMODS and SMODS.Mods and SMODS.Mods[group.original_mod_id]
 			local localization = G.localization.descriptions["TheFamily_Group"][group.key] or {}
 
-			local is_enabled = group:enabled()
+			local is_enabled = group:_cached_enabled()
 			local is_disabled_by_user = group:_disabled_by_user()
 
 			local name = {}
@@ -303,8 +303,14 @@ function TheFamilyGroup:_add_tab(tab)
 	self.tabs.dictionary[tab.key] = tab
 end
 
+function TheFamilyGroup:_cached_enabled(no_cache)
+	if no_cache or self.is_enabled == nil then
+		self.is_enabled = not not self:enabled()
+	end
+	return self.is_enabled
+end
 function TheFamilyGroup:_enabled()
-	return not self:_disabled() and self:enabled()
+	return self:_cached_enabled() and not self:_disabled()
 end
 function TheFamilyGroup:_disabled()
 	return self:_disabled_by_user()

@@ -29,9 +29,18 @@ function TheFamilyTab:init(params)
 
 	self.front = params.front or nil
 	self.center = params.center or "c_base"
-	self.front_label = params.front_label or nil
-	self.popup = params.popup or nil
-	self.alert = params.alert or nil
+
+	local front_func = params.front_label
+	if type(front_func) == "string" then
+		front_func = function()
+			return {
+				text = params.front_label,
+			}
+		end
+	end
+	self.front_label = only_function(front_func, self.front_label)
+	self.popup = only_function(params.popup, self.popup)
+	self.alert = only_function(params.alert, self.alert)
 	self.keep_popup_when_highlighted = params.keep_popup_when_highlighted or false
 
 	self.can_highlight = only_function(params.can_highlight, self.can_highlight)
@@ -41,6 +50,7 @@ function TheFamilyTab:init(params)
 
 	self.update = only_function(params.update, self.update)
 	self.click = only_function(params.click, self.click)
+	self.load = only_function(params.load, self.load)
 
 	self.enabled = only_function(params.enabled, self.enabled)
 	self.can_be_disabled = params.can_be_disabled or false
@@ -65,7 +75,7 @@ function TheFamilyTab:init(params)
 end
 
 function TheFamilyTab:_enabled()
-	return not self:_disabled() and self:enabled()
+	return self:_cached_enabled() and not self:_disabled()
 end
 function TheFamilyTab:_disabled()
 	return (self.group and self.group:_disabled_by_user()) or self:_disabled_by_user()
@@ -78,9 +88,18 @@ function TheFamilyTab:_toggle_by_user()
 	local old_disabled = self:_disabled()
 	TheFamily.cc.disabled_tabs[self.key] = not TheFamily.cc.disabled_tabs[self.key]
 	local new_disabled = self:_disabled()
+	if new_disabled then
+		self:close()
+	end
 	if not not new_disabled ~= not not old_disabled then
 		self:disabled_change(new_disabled, false)
 	end
+end
+function TheFamilyTab:_cached_enabled(no_cache)
+	if no_cache or self.is_enabled == nil then
+		self.is_enabled = not not self:enabled()
+	end
+	return self.is_enabled
 end
 function TheFamilyTab:enabled()
 	return true
@@ -96,6 +115,7 @@ function TheFamilyTab:highlight(card) end
 function TheFamilyTab:unhighlight(card) end
 function TheFamilyTab:click(card) end
 function TheFamilyTab:update(card, dt) end
+function TheFamilyTab:load() end
 
 function TheFamilyTab:front_label(card) end
 function TheFamilyTab:popup(card) end
@@ -264,7 +284,7 @@ function TheFamilyTab:prepare_config_card(card)
 			local current_mod = tab.original_mod_id and SMODS and SMODS.Mods and SMODS.Mods[tab.original_mod_id]
 			local localization = G.localization.descriptions["TheFamily_Tab"][tab.key] or {}
 
-			local is_enabled = tab:enabled()
+			local is_enabled = tab:_cached_enabled()
 			local is_disabled_by_user = tab:_disabled_by_user()
 			local can_be_disabled = tab.can_be_disabled or (tab.group and tab.group.can_be_disabled)
 
@@ -462,6 +482,7 @@ function TheFamilyTab:remove_front_label()
 		if self.card.children.front_label then
 			self.card.children.front_label:remove()
 			self.card.children.front_label = nil
+			TheFamily.utils.cleanup_dead_elements(G, "MOVEABLES")
 		end
 	end
 end
@@ -470,6 +491,7 @@ function TheFamilyTab:remove_alert()
 		if self.card.children.alert then
 			self.card.children.alert:remove()
 			self.card.children.alert = nil
+			TheFamily.utils.cleanup_dead_elements(G, "MOVEABLES")
 		end
 	end
 end
@@ -478,6 +500,7 @@ function TheFamilyTab:remove_popup()
 		if self.card.children.popup then
 			self.card.children.popup:remove()
 			self.card.children.popup = nil
+			TheFamily.utils.cleanup_dead_elements(G, "MOVEABLES")
 		end
 	end
 end

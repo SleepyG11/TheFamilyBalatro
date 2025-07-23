@@ -25,7 +25,8 @@
 --- ```lua
 --- { n = G.UIT.T, config = <returned value> }
 --- ```
---- @alias TheFamilyTabFrontLabelDefinition fun(self: TheFamilyTab, card: Card): INodeConfig | { remove: true } | nil
+--- String can be used aswell as shorthand for declaring function which returns text.
+--- @alias TheFamilyTabFrontLabelDefinition fun(self: TheFamilyTab, card: Card): INodeConfig | { remove: true } | string | nil
 
 --- Definition of popup which will be displayed when tab's card is hovered.<br>
 --- <br>
@@ -82,7 +83,8 @@
 --- @field unhighlight? fun(self: TheFamilyTab, card?: Card) Callback when card is unhighlighted. Can be called without card object when closes but not rendered in current page
 --- @field click? fun(self: TheFamilyTab, card: Card): boolean | nil Callback when card is clicked. If callback returns `true`, other events will not be fired (ex. card highlight, tab selection)
 --- @field update? fun(self: TheFamilyTab, card?: Card, dt: number) Update function. `dt` affected by game speed. Called for every enabled tab every frame. Callback can be called without card object if tab is not rendered on current page
---- @field enabled? fun(self: TheFamilyTab): boolean Function which determines can this tab be created.
+--- @field load? fun(self: TheFamilyTab, is_disabled_by_user: boolean) Called once when run is loaded and tab is enabled (ignores disabling by user).
+--- @field enabled? fun(self: TheFamilyTab): boolean Function which determines can this tab be created. Called once when run is loaded.
 --- @field loc_txt? table SMODS-like localization definition with `name` and `text` fields. See https://github.com/Steamodded/smods/wiki/Localization#loc_txt
 --- @field original_mod_id? string Mod id this tab belongs to. Use only when your mod is not require SMODS. Default is `SMODS.current_mod.id`
 --- @field can_be_disabled? boolean Determines can this tab be disabled in mod config. Default is `false`
@@ -93,9 +95,9 @@
 --- @field load_index number
 --- @field group? TheFamilyGroup
 --- @field card? Card Card which represents tab
---- @field rerender_front_label fun() Function to manually rerender front_label
---- @field rerender_popup fun() Function to manually rerender popup
---- @field rerender_alert fun() Function to manually rerender alert
+--- @field rerender_front_label fun(self: TheFamilyTab) Function to manually rerender front_label
+--- @field rerender_popup fun(self: TheFamilyTab) Function to manually rerender popup
+--- @field rerender_alert fun(self: TheFamilyTab) Function to manually rerender alert
 --- @field open fun(self: TheFamilyTab, without_callbacks?: boolean) Manually open tab. All checks applied. If `without_callbacks = true`, highlight events will not be fired
 --- @field close fun(self: TheFamilyTab, without_callbacks?: boolean) Manually close tab. All checks applied. If `without_callbacks = true`, unhighlight events will not be fired
 
