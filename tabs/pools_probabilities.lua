@@ -230,22 +230,22 @@ local PoolProbabilities = setmetatable({
 
 		local keys_in_shop = {}
 		if self.keep_shop_slots_in_pool then
-			if G.shop_jokers then
+			if G.shop_jokers and G.shop_jokers.cards then
 				for _, card in ipairs(G.shop_jokers.cards) do
 					keys_in_shop[card.config.center.key] = true
 				end
 			end
-			if G.shop_vouchers then
+			if G.shop_vouchers and G.shop_vouchers.cards then
 				for _, card in ipairs(G.shop_vouchers.cards) do
 					keys_in_shop[card.config.center.key] = true
 				end
 			end
-			if G.shop_booster then
+			if G.shop_booster and G.shop_booster.cards then
 				for _, card in ipairs(G.shop_booster.cards) do
 					keys_in_shop[card.config.center.key] = true
 				end
 			end
-			if G.pack_cards then
+			if G.pack_cards and G.pack_cards.cards then
 				for _, card in ipairs(G.pack_cards.cards) do
 					keys_in_shop[card.config.center.key] = true
 				end
