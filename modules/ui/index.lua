@@ -60,6 +60,12 @@ TheFamily.UI = {
 		return collected_lines
 	end,
 	localize_box = (SMODS and SMODS.localize_box) or function(lines, args)
+		local function format_ui_value(value)
+			if type(value) ~= "number" then
+				return tostring(value)
+			end
+			return number_format(value, 1000000)
+		end
 		local final_line = {}
 		for _, part in ipairs(lines) do
 			local assembled_string = ""
