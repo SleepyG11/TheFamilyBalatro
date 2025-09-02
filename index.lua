@@ -1,5 +1,5 @@
 TheFamily = setmetatable({
-	version = "0.1.2b",
+	version = "0.1.3",
 }, {})
 
 TheFamily.SWITCH_OVERLAYS = {
@@ -208,6 +208,12 @@ end
 local start_run_ref = Game.start_run
 function Game:start_run(...)
 	start_run_ref(self, ...)
+	TheFamily.init()
+end
+
+local main_menu_ref = Game.main_menu
+function Game:main_menu(...)
+	main_menu_ref(self, ...)
 	TheFamily.init()
 end
 

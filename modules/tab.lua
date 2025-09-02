@@ -56,6 +56,8 @@ function TheFamilyTab:init(params)
 	self.can_be_disabled = params.can_be_disabled or false
 	self.disabled_change = only_function(params.disabled_change, self.disabled_change)
 
+	self.stage = params.stage or "RUN"
+
 	self.card = nil
 
 	if self.group_key then
@@ -74,6 +76,17 @@ function TheFamilyTab:init(params)
 	end
 end
 
+function TheFamilyTab:_is_in_stage()
+	if self.stage == "ALL" then
+		return true
+	elseif self.stage == "RUN" then
+		return G.STAGE == G.STAGES.RUN
+	elseif self.stage == "MAIN_MENU" then
+		return G.STAGE == G.STAGES.MAIN_MENU
+	else
+		return false
+	end
+end
 function TheFamilyTab:_enabled()
 	return self:_cached_enabled() and not self:_disabled()
 end
@@ -97,7 +110,7 @@ function TheFamilyTab:_toggle_by_user()
 end
 function TheFamilyTab:_cached_enabled(no_cache)
 	if no_cache or self.is_enabled == nil then
-		self.is_enabled = not not self:enabled()
+		self.is_enabled = not not self:enabled() and self:_is_in_stage()
 	end
 	return self.is_enabled
 end

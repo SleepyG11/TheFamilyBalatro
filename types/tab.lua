@@ -89,6 +89,7 @@
 --- @field original_mod_id? string Mod id this tab belongs to. Use only when your mod is not require SMODS. Default is `SMODS.current_mod.id`
 --- @field can_be_disabled? boolean Determines can this tab be disabled in mod config. Default is `false`
 --- @field disabled_change? fun(self: TheFamilyTab, new_value: boolean, caused_by_group: boolean) Callback when tab is enabled/disabled by player in mod config. Ignores `TheFamilyTab:enabled()`. Can be called in main menu too (from SMODS config page)
+--- @field stage? "RUN" | "MAIN_MENU" | "ALL" Determines in which game stages tab can be created
 
 --- Class which handles all tab's logic and rendering
 --- @class TheFamilyTab: TheFamilyTabOptions

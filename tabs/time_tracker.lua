@@ -146,18 +146,18 @@ local TimeTracker = setmetatable({
 						ref_table = self,
 						ref_value = "session_label",
 					}),
-					create_time_row({
+					G.STAGE == G.STAGES.RUN and create_time_row({
 						text = "This run",
 						ref_table = self,
 						ref_value = "this_run_label",
-					}),
+					}) or nil,
 					create_time_row({
 						text = "Game speed",
 						ref_table = self,
 						ref_value = "acceleration_label",
 					}),
 				},
-				{
+				G.STAGE == G.STAGES.RUN and {
 					create_time_row({
 						text = "Last hand",
 						ref_table = self,
@@ -178,7 +178,7 @@ local TimeTracker = setmetatable({
 							scale = 0.8,
 						}),
 					} or nil,
-				},
+				} or nil,
 				card.highlighted and {
 					create_option_cycle({
 						options = { "Long 12h", "Long 24h", "Short 12h", "Short 24h" },
@@ -250,6 +250,8 @@ TimeTracker.tab = TheFamily.create_tab({
 			"current session/hand time duration",
 		},
 	},
+
+	stage = "ALL",
 
 	front_label = function()
 		return {
